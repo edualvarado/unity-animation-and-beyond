@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class BalanceArm : MonoBehaviour
 {
-    [Range(0f, 1000f)]
+    [Range(0f,1000f)]
     public float p, i, d;
 
     public float targetAngle;
