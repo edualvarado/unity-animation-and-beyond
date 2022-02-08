@@ -573,7 +573,7 @@ Animator:
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: 088b1a502ce143b46bdd6d6fa537a6a1, type: 3}
   m_Controller: {fileID: 9100000, guid: dff7989d11c1f4f4187622adc54e6ac2, type: 2}
-  m_CullingMode: 1
+  m_CullingMode: 0
   m_UpdateMode: 1
   m_ApplyRootMotion: 1
   m_LinearVelocityBlending: 0
@@ -623,24 +623,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e82faab64d42c8f43bfe6f745ad66155, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  joystickMode: 1
+  joystickMode: 0
   rootKinematicSkeleton: {fileID: 6386583349099614037}
-  moveSpeed: 1
-  offsetKinematicMovement: 3
-  shooterCameraMode: 0
-  rotationSpeed: 280
-  blockCamera: 0
-  moveForwardOnly: 0
   moveDirection: {x: 0, y: 0, z: 0}
   _inputs: {x: 0, y: 0, z: 0}
-  inputMagnitude: 0
-  _velocity: {x: 0, y: 0, z: 0}
+  shooterCameraMode: 0
+  blockCamera: 0
+  moveForwardOnly: 0
+  speedRotation: 280
+  motion: 0
+  speedAnimation: 1
+  speedTransform: 1
+  speedRigidBody: 1
+  animationMultiplier: 0.66
   _groundChecker: {fileID: 1403812491945194701}
+  _isGrounded: 1
   GroundDistance: 0.2
   Ground:
     serializedVersion: 2
     m_Bits: 64
-  _isGrounded: 1
+  inputMagnitude: 0
+  slopeAngle: 0
+  applyChangeSpeedTerrain: 0
+  applyMovePositionRB: 0
+  applyRotationRB: 0
+  m_EulerAngleVelocity: {x: 0, y: 0, z: 0}
+  applyTorqueRB: 0
+  torque: 0
+  timer: 0
+  signRotation: 1
+  leftFoot: {fileID: 3739053921397413403}
+  rightFoot: {fileID: 1948485707459751510}
 --- !u!114 &919132149592860456
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -653,6 +666,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ec2c6e2aaba0a14dbce390587c62770, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  rightFootPosition: {x: 0, y: 0, z: 0}
+  leftFootPosition: {x: 0, y: 0, z: 0}
+  rightFootIKPosition: {x: 0, y: 0, z: 0}
+  leftFootIKPosition: {x: 0, y: 0, z: 0}
   enableFeetIK: 1
   heightFromGroundRaycast: 0.2
   raycastDownDistance: 1
@@ -662,18 +679,14 @@ MonoBehaviour:
   pelvisOffset: 0
   pelvisUpAndDownSpeed: 0.3
   feetToIKPositionSpeed: 0.2
-  rightFootPosition: {x: 0, y: 0, z: 0}
-  leftFootPosition: {x: 0, y: 0, z: 0}
-  rightFootIKPosition: {x: 0, y: 0, z: 0}
-  leftFootIKPosition: {x: 0, y: 0, z: 0}
-  groundCheckerLeftFootBack: {fileID: 567119340}
-  groundCheckerLeftFootFront: {fileID: 1264560983}
-  groundCheckerRightFootFront: {fileID: 288195003}
-  groundCheckerRightFootBack: {fileID: 534160767}
-  feetToGroundDistance: 0.06
   drawSensorRayGrounder: 0
   isLeftFootGrounded: 0
   isRightFootGrounded: 0
+  groundCheckerLeftFootBack: {fileID: 567119340}
+  groundCheckerLeftFoot: {fileID: 1264560983}
+  groundCheckerRightFoot: {fileID: 288195003}
+  groundCheckerRightFootBack: {fileID: 534160767}
+  feetToGroundDistance: 0.06
   leftFootAnimVariableName: LeftFootCurve
   rightFootAnimVariableName: RightFootCurve
   useProIKFeature: 1
