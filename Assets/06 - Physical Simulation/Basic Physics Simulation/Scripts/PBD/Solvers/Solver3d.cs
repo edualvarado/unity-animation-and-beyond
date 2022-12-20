@@ -1,4 +1,7 @@
-﻿using System;
+﻿using UnityEngine;
+using System.Collections.Generic;
+
+using System;
 using System.Collections.Generic;
 
 using Common.Mathematics.LinearAlgebra;
@@ -21,6 +24,8 @@ namespace PositionBasedDynamics.Solvers
 
         public List<Body3d> Bodies { get; private set; }
 
+        public List<Rigidbody> ExtBodies { get; private set; }
+
         private List<ExternalForce3d> Forces { get; set; }
 
         private List<Collision3d> Collisions { get; set; }
@@ -33,6 +38,7 @@ namespace PositionBasedDynamics.Solvers
             Forces = new List<ExternalForce3d>();
             Collisions = new List<Collision3d>();
             Bodies = new List<Body3d>();
+            ExtBodies = new List<Rigidbody>();
         }
 
         public void AddForce(ExternalForce3d force)
@@ -51,6 +57,12 @@ namespace PositionBasedDynamics.Solvers
         {
             if (Bodies.Contains(body)) return;
             Bodies.Add(body);
+        }
+
+        public void AddExternalBody(Rigidbody body)
+        {
+            if (ExtBodies.Contains(body)) return;
+            ExtBodies.Add(body);
         }
 
         public void StepPhysics(double dt)
