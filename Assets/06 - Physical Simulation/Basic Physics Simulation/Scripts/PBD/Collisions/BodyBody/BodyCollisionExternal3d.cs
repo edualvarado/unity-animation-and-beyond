@@ -24,18 +24,39 @@ namespace PositionBasedDynamics.Collisions
             ExtBody = extBody;
         }
 
-        internal override void FindExternalContacts(IList<Body3d> bodies, IList<Body3d> externalBodies, List<CollisionContact3d> contacts)
+        internal override void FindExternalContacts(IList<Body3d> bodies, IList<Rigidbody> externalBodies, List<CollisionContactExternal3d> externalContacts)
         {
             for (int j = 0; j < bodies.Count; j++)
             {
                 for (int k = 0; k < externalBodies.Count; k++)
                 {
-                    Debug.Log("bodies[j]: " + bodies[j] + " with externalBodies[k]: " + externalBodies[k]);
+                    Body3d body1 = bodies[j];
+                    Rigidbody body2 = externalBodies[k];
+
+                    int numParticles1 = body1.NumParticles;
+                    double radius1 = body1.ParticleRadius;
+                    
+                    for (int x = 0; x < numParticles1; x++)
+                    {
+                        // if there is a contact of this particle with the external body, add it to the list
+                        if (body1.IsContact[x])
+                        {
+                            //Debug.Log("[FindExternalContacts] Adding contact of Particle: " + x + ": " + body1.IsContact[x]);
+                            //Debug.Log("[FindExternalContacts] Position Contact: " + body1.ExternalHit[x].point);
+
+                            // It draws multiple rays
+                            //Debug.DrawRay(body1.ExternalHit[x].point, body1.ExternalHit[x].normal, Color.cyan, 1f);
+
+                            externalContacts.Add(new BodyBodyContactExternal3d(body1, x, body2));
+                        }
+                        else
+                        {
+                            //Debug.Log("[FindExternalContacts] x: " + x);
+                            //Debug.Log("[FindExternalContacts] body1.IsContact[x]: " + body1.IsContact[x]);
+                        }
+                    }
                 }
-                
             }
-
         }
-
     }
 }

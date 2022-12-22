@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 using Common.Mathematics.LinearAlgebra;
 
@@ -37,17 +38,21 @@ namespace PositionBasedDynamics.Collisions
 
         internal override void ResolveContact(double di)
         {
+            // B = C - A. B points towards C from A.
             Vector3d normal = Body0.Predicted[i0] - Body1.Predicted[i1];
-
+            
             double sqLen = normal.SqrMagnitude;
 
             if (sqLen <= Diameter2 && sqLen > 1e-9)
             {
+                //Debug.DrawRay(Body1.Predicted[i1].ToVector3(), normal.ToVector3(), Color.yellow);
+
                 double len = Math.Sqrt(sqLen);
                 normal /= len;
 
                 Vector3d delta = di * (Diameter - len) * normal;
-
+                //Debug.Log("delta: " + delta);
+                
                 Body0.Predicted[i0] += delta * Mass0;
                 Body0.Positions[i0] += delta * Mass0;
 

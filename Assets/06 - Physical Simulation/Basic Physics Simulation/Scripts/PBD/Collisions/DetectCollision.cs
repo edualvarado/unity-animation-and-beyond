@@ -2,19 +2,34 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class DetectCollision : MonoBehaviour
-{    
-    // TODO - Class where to forward the hit
-    
-    private void OnCollisionEnter(Collision collision)
+namespace PositionBasedDynamics.Collisions
+{
+    public class DetectCollision : MonoBehaviour
     {
-        Debug.Log("Collision Detected: " + collision.gameObject.name);
-        Debug.DrawRay(collision.contacts[0].point, collision.contacts[0].normal, Color.blue, 1f);
+        public Collision Hit { get; set; }     
+       
+        private void OnCollisionEnter(Collision collision)
+        {
+            // Save collision
+            Hit = collision;
+            
+            //Debug.Log("[DetectCollision] Sphere: " + int.Parse(gameObject.name) + ": Hit " + Hit.GetContact(0).point);
 
-        // TODO - Forward to the parent
-        //PlayerCollisionHelper parentScript = transform.parent.GetComponent<PlayerCollisionHelper>();
+            // Forward to the parent and let know a collision happened
+            BasicPBDDemo parentScript = transform.parent.GetComponent<BasicPBDDemo>();
+            parentScript.CollisionFromChild(Hit, this.gameObject);
+        }
 
-        // Let it know a collision happened:
-        //parentScript.CollisionFromChild(hit);
-    }
+        private void OnCollisionExit(Collision collision)
+        {
+            // Save collision
+            //Hit = collision;
+
+            //Debug.Log("[DetectCollision] Sphere: " + int.Parse(gameObject.name) + ": Hit " + Hit.GetContact(0).point);
+
+            // Forward to the parent and let know a collision happened
+            BasicPBDDemo parentScript = transform.parent.GetComponent<BasicPBDDemo>();
+            parentScript.ExitCollisionFromChild(this.gameObject);
+        }
+    } 
 }

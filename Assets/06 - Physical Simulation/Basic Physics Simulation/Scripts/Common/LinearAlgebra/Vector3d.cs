@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using UnityEngine;
 
 namespace Common.Mathematics.LinearAlgebra
 {
@@ -115,6 +116,11 @@ namespace Common.Mathematics.LinearAlgebra
                     default: throw new IndexOutOfRangeException("Vector3d index out of range: " + i);
                 }
             }
+        }
+
+        public Vector3 ToVector3()
+        {
+            return new Vector3((float)x, (float)y, (float)z);
         }
 
         /// <summary>

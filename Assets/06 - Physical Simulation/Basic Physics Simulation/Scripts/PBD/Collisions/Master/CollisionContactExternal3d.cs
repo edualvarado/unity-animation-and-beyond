@@ -13,6 +13,8 @@ namespace PositionBasedDynamics.Collisions
 
         internal abstract void ResolveContactExternal(double di);
 
+        internal abstract double PrintMass();
+
     }
 
 }

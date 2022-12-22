@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 using Common.Mathematics.LinearAlgebra;
 
@@ -12,11 +13,11 @@ namespace PositionBasedDynamics.Collisions
     {
 
 
-        internal virtual void FindExternalContacts(IList<Body3d> bodies, IList<Body3d> externalBodies, List<CollisionContact3d> contacts)
+        internal virtual void FindExternalContacts(IList<Body3d> bodies, IList<Rigidbody> externalBodies, List<CollisionContactExternal3d> externalContacts)
         {
 
         }
-
+        
 
     }
 

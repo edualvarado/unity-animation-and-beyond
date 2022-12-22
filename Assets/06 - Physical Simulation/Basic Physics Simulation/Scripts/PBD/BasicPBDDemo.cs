@@ -25,7 +25,7 @@ namespace PositionBasedDynamics
         public float distance;
         public GameObject obstacle;
         [Range(0f, 1f)] public float scaleRadius;
-
+        
         // Reference Grid (White)
         public int GRID_SIZE = 2;
 
@@ -44,7 +44,7 @@ namespace PositionBasedDynamics
         public float fymin, fymax;
         public float fzmin, fzmax;
 
-        public int iterations = 4;
+        public int iterations = 1; // 4 before
 
 
         public bool drawLines = true;
@@ -58,7 +58,7 @@ namespace PositionBasedDynamics
         private List<GameObject> Spheres2 { get; set; }
         private List<GameObject> Spheres3 { get; set; }
 
-        private DeformableBody3d Body { get; set; }
+        private DeformableBody3d Body1 { get; set; }
         private DeformableBody3d Body2 { get; set; }
         private RidgidBody3d Body3 { get; set; }
         private Rigidbody ExtRigidBody { get; set; }
@@ -92,21 +92,21 @@ namespace PositionBasedDynamics
             max = new Vector3d(maxVector3.x, maxVector3.y, maxVector3.z);
             Box3d bounds = new Box3d(min, max);
             TetrahedronsFromBounds source = new TetrahedronsFromBounds(radius, bounds);
-            Body = new DeformableBody3d(source, radius, mass, stiffness, TR);
+            Body1 = new DeformableBody3d(source, radius, mass, stiffness, TR);
 
             // TEST: Second Body
             // -----------------
 
             // Global pos and rotation of mesh
-            //Matrix4x4d T2 = Matrix4x4d.Translate(new Vector3d(-0.5f, 5f, 0.5f));
-            //Matrix4x4d R2 = Matrix4x4d.Rotate(new Vector3d(0f, 0f, 0f));
-            //Matrix4x4d TR2 = T2 * R2;
+            Matrix4x4d T2 = Matrix4x4d.Translate(new Vector3d(-0.5f, 5f, 0.5f));
+            Matrix4x4d R2 = Matrix4x4d.Rotate(new Vector3d(0f, 0f, 0f));
+            Matrix4x4d TR2 = T2 * R2;
 
-            //Vector3d min2 = new Vector3d(0.5f, 0.5f, 0.5f);
-            //Vector3d max2 = new Vector3d(maxVector3.x, maxVector3.y, maxVector3.z);
-            //Box3d bounds2 = new Box3d(min2, max2);
-            //TetrahedronsFromBounds source2 = new TetrahedronsFromBounds(radius, bounds2);
-            //Body2 = new DeformableBody3d(source2, radius, mass, stiffness, TR2);
+            Vector3d min2 = new Vector3d(0.5f, 0.5f, 0.5f);
+            Vector3d max2 = new Vector3d(maxVector3.x, maxVector3.y, maxVector3.z);
+            Box3d bounds2 = new Box3d(min2, max2);
+            TetrahedronsFromBounds source2 = new TetrahedronsFromBounds(radius, bounds2);
+            Body2 = new DeformableBody3d(source2, radius, mass, stiffness, TR2);
 
             // TEST: Third Rigid Body
             // -------------------------
@@ -131,9 +131,9 @@ namespace PositionBasedDynamics
 
             // ???
             System.Random rnd = new System.Random(0);
-            Body.Dampning = 1.0;
-            Body.RandomizePositions(rnd, radius * 0.01);
-            Body.RandomizeConstraintOrder(rnd);
+            Body1.Dampning = 1.0;
+            Body1.RandomizePositions(rnd, radius * 0.01);
+            Body1.RandomizeConstraintOrder(rnd);
 
             // TEST: Second Body
             //Body2.Dampning = 1.0;
@@ -143,7 +143,7 @@ namespace PositionBasedDynamics
             // TEST: Third Body
             //Body3.Dampning = 1.0;
             //Body3.RandomizePositions(rnd, radius3 * 0.01);
-
+            
             // -------------------------
 
             // Static Bounds (Green)
@@ -163,26 +163,44 @@ namespace PositionBasedDynamics
             Solver = new Solver3d();
 
             // TEST
-            Solver.AddBody(Body);
+            Solver.AddBody(Body1);
             //Solver.AddBody(Body2);
             //Solver.AddBody(Body3);
 
             // TEST
-            Solver.AddExternalBody(ExtRigidBody); // Or include GameObject, let's see
+            Solver.AddExternalBody(ExtRigidBody); // Or include GameObject, let's see - Add in solver to list "ExternalBodies"
 
             Solver.AddForce(new GravitationalForce3d());
+
+            // -------
 
             // Permanent Collisions
             Collision3d ground = new PlanarCollision3d(Vector3d.UnitY, 0);
             Solver.AddCollision(ground);
-            
+
+            // TEST TODO: Add COLLISION WITH EXTERNAL BODY
+            CollisionExternal3d bodyWithExt = new BodyCollisionExternal3d(Body1, ExtRigidBody);
+            Solver.AddExternalCollision(bodyWithExt);
+
+            // TEST
+            // Collision with Body2
+            Collision3d bodyBody = new BodyCollision3d(Body1, Body2);
+            Solver.AddCollision(bodyBody);
+
+            // TEST
+            // Collision with Body3
+            //Collision3d bodyBody = new BodyCollision3d(Body1, Body3);
+            //Solver.AddCollision(bodyBody);
+
+            // -------
+
             Solver.SolverIterations = 2;
             Solver.CollisionIterations = 2;
             Solver.SleepThreshold = 1;
 
             // TEST
             CreateSpheres();
-            //CreateSpheres2();
+            CreateSpheres2();
             //CreateSpheres3();
         }
 
@@ -192,28 +210,12 @@ namespace PositionBasedDynamics
             double dt = timeStep / iterations;
             //double dt = Time.fixedDeltaTime / iterations; // XPBD
 
-            // TEST
-            // Collision with Body2
-            //Collision3d bodyBody = new BodyCollision3d(Body, Body2);
-            //Solver.AddCollision(bodyBody);
-
-            // TEST
-            // Collision with Body3
-            //Collision3d bodyBody = new BodyCollision3d(Body, Body3);
-            //Solver.AddCollision(bodyBody);
-
-            // TEST TODO: Add COLLISION WITH EXTERNAL BODY
-            CollisionExternal3d bodyWithExt = new BodyCollisionExternal3d(Body, ExtRigidBody);
-
-
-            // -------
-
             for (int i = 0; i < iterations; i++)
                 Solver.StepPhysics(dt);
 
             // TEST
             UpdateSpheres();
-            //UpdateSpheres2();
+            UpdateSpheres2();
             //UpdateSpheres3();
         }
 
@@ -250,7 +252,7 @@ namespace PositionBasedDynamics
                 DrawLines.DrawGrid(camera, Color.white, min, max, 1, transform.localToWorldMatrix);
 
                 Matrix4x4d m = MathConverter.ToMatrix4x4d(transform.localToWorldMatrix);
-                DrawLines.DrawVertices(LINE_MODE.TETRAHEDRON, camera, Color.red, Body.Positions, Body.Indices, m);
+                DrawLines.DrawVertices(LINE_MODE.TETRAHEDRON, camera, Color.red, Body1.Positions, Body1.Indices, m);
                 //DrawLines.DrawVertices(LINE_MODE.TETRAHEDRON, camera, Color.red, Body2.Positions, Body2.Indices, m);
 
                 DrawLines.DrawBounds(camera, Color.green, StaticBounds, Matrix4x4d.Identity);
@@ -263,20 +265,22 @@ namespace PositionBasedDynamics
 
             Spheres = new List<GameObject>();
 
-            int numParticles = Body.NumParticles;
-            float diam = (float)Body.ParticleRadius * 2.0f * scaleRadius;
+            int numParticles = Body1.NumParticles;
+            float diam = (float)Body1.ParticleRadius * 2.0f * scaleRadius;
 
             for (int i = 0; i < numParticles; i++)
             {
-                Vector3 pos = MathConverter.ToVector3(Body.Positions[i]);
+                Vector3 pos = MathConverter.ToVector3(Body1.Positions[i]);
 
                 GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                sphere.name = i.ToString(); // TEST
                 sphere.transform.parent = transform;
                 sphere.transform.position = pos;
                 sphere.transform.localScale = new Vector3(diam, diam, diam);
                 sphere.GetComponent<Collider>().enabled = true;
                 sphere.GetComponent<MeshRenderer>().material = sphereMaterial;
                 sphere.AddComponent<DetectCollision>();
+                
                 Spheres.Add(sphere);
             }
         }
@@ -333,7 +337,7 @@ namespace PositionBasedDynamics
             {
                 for (int i = 0; i < Spheres.Count; i++)
                 {
-                    Vector3d pos = Body.Positions[i];
+                    Vector3d pos = Body1.Positions[i];
                     Spheres[i].transform.position = new Vector3((float)pos.x, (float)pos.y, (float)pos.z);
                 }
             }
@@ -359,6 +363,46 @@ namespace PositionBasedDynamics
                 {
                     Vector3d pos = Body3.Positions[i];
                     Spheres3[i].transform.position = new Vector3((float)pos.x, (float)pos.y, (float)pos.z);
+                }
+            }
+        }
+
+        public void CollisionFromChild(Collision hit, GameObject children)
+        {
+            //Debug.Log("[BasicPBDDemo] Collision Detected with object: " + hit.gameObject.name + " with particle/sphere: " + children.name);
+
+            for (int x = 0; x < Body1.NumParticles; x++)
+            {
+                if (x == int.Parse(children.name))
+                {
+                    //Debug.Log("CHANGING SPHERE: " + x + " with the value " + Spheres[x].GetComponent<DetectCollision>().Hit.GetContact(0).point);
+
+                    Body1.ExternalHit[x] = hit.GetContact(0);
+                    Body1.IsContact[x] = true;
+                }
+            }
+
+            //Debug.Log("==================");
+            //for (int x = 0; x < Body1.NumParticles; x++)
+            //{
+            //    if (Body1.ExternalHit[x].point != Vector3.zero)
+            //        Debug.Log("[INFO] Sphere: " + x + " - Body1.ExternalHit[x]: " + Body1.ExternalHit[x].point);
+            //    else
+            //        Debug.Log("[INFO] Sphere: " + x + " - Body1.ExternalHit[x]: 0");
+            //}
+            //Debug.Log("==================");
+            
+            // It draws multiple rays
+            //Debug.DrawRay(Body1.ExternalHit[int.Parse(children.name)].point, Body1.ExternalHit[int.Parse(children.name)].normal, Color.blue, 1f);
+        }
+
+        public void ExitCollisionFromChild(GameObject children)
+        {
+            for (int x = 0; x < Body1.NumParticles; x++)
+            {
+                if (x == int.Parse(children.name))
+                {
+                    Body1.IsContact[x] = false;
                 }
             }
         }

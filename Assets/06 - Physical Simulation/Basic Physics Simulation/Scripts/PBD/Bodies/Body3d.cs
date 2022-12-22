@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 using Common.Mathematics.LinearAlgebra;
 using Common.Geometry.Shapes;
@@ -28,6 +29,11 @@ namespace PositionBasedDynamics.Bodies
         public Vector3d[] Predicted { get; private set; }
 
         public Vector3d[] Velocities { get; private set; }
+        
+        // TEST
+        public bool[] IsContact { get; set; }
+        // TEST
+        public ContactPoint[] ExternalHit { get; set; }
 
         public Box3d Bounds { get; private set; }
 
@@ -37,9 +43,12 @@ namespace PositionBasedDynamics.Bodies
 
         public Body3d(int numParticles, double radius, double mass)
         {
+            Debug.Log("[Body3d] Arrays Initialized");
             Positions = new Vector3d[numParticles];
             Predicted = new Vector3d[numParticles];
             Velocities = new Vector3d[numParticles];
+            IsContact = new bool[numParticles]; // TEST
+            ExternalHit = new ContactPoint[numParticles]; // TEST
             Constraints = new List<Constraint3d>();
             StaticConstraints = new List<StaticConstraint3d>();
 
@@ -82,7 +91,7 @@ namespace PositionBasedDynamics.Bodies
 
         }
 
-        public void RandomizePositions(Random rnd, double amount)
+        public void RandomizePositions(System.Random rnd, double amount)
         {
             for(int i = 0; i < NumParticles; i++)
             {
@@ -94,7 +103,7 @@ namespace PositionBasedDynamics.Bodies
             }
         }
 
-        public void RandomizeConstraintOrder(Random rnd)
+        public void RandomizeConstraintOrder(System.Random rnd)
         {
             int count = Constraints.Count;
             if (count <= 1) return;

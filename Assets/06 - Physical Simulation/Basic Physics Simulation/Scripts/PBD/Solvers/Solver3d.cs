@@ -24,11 +24,13 @@ namespace PositionBasedDynamics.Solvers
 
         public List<Body3d> Bodies { get; private set; }
 
-        public List<Rigidbody> ExtBodies { get; private set; }
+        public List<Rigidbody> ExternalBodies { get; private set; }
 
         private List<ExternalForce3d> Forces { get; set; }
 
         private List<Collision3d> Collisions { get; set; }
+
+        private List<CollisionExternal3d> ExternalCollisions { get; set; }
 
         public Solver3d()
         {
@@ -36,9 +38,12 @@ namespace PositionBasedDynamics.Solvers
             CollisionIterations = 2;
 
             Forces = new List<ExternalForce3d>();
+            
             Collisions = new List<Collision3d>();
+            ExternalCollisions = new List<CollisionExternal3d>();
+            
             Bodies = new List<Body3d>();
-            ExtBodies = new List<Rigidbody>();
+            ExternalBodies = new List<Rigidbody>();
         }
 
         public void AddForce(ExternalForce3d force)
@@ -53,6 +58,12 @@ namespace PositionBasedDynamics.Solvers
             Collisions.Add(collision);
         }
 
+        public void AddExternalCollision(CollisionExternal3d externalCollision)
+        {
+            if (ExternalCollisions.Contains(externalCollision)) return;
+            ExternalCollisions.Add(externalCollision);
+        }
+
         public void AddBody(Body3d body)
         {
             if (Bodies.Contains(body)) return;
@@ -61,8 +72,8 @@ namespace PositionBasedDynamics.Solvers
 
         public void AddExternalBody(Rigidbody body)
         {
-            if (ExtBodies.Contains(body)) return;
-            ExtBodies.Add(body);
+            if (ExternalBodies.Contains(body)) return;
+            ExternalBodies.Add(body);
         }
 
         public void StepPhysics(double dt)
@@ -76,6 +87,8 @@ namespace PositionBasedDynamics.Solvers
             UpdateBounds();
 
             ResolveCollisions();
+
+            ResolveExternalCollisions(); // TEST
 
             ConstrainPositions();
 
@@ -143,6 +156,26 @@ namespace PositionBasedDynamics.Solvers
                 for (int j = 0; j < contacts.Count; j++)
                 {
                     contacts[j].ResolveContact(di);
+                }
+            }
+        }
+
+        private void ResolveExternalCollisions()
+        {
+            List<CollisionContactExternal3d> externalContacts = new List<CollisionContactExternal3d>();
+
+            for (int i = 0; i < ExternalCollisions.Count; i++)
+            {
+                ExternalCollisions[i].FindExternalContacts(Bodies, ExternalBodies, externalContacts);
+            }
+
+            double di = 1.0 / CollisionIterations;
+
+            for (int i = 0; i < CollisionIterations; i++)
+            {
+                for (int j = 0; j < externalContacts.Count; j++)
+                {
+                    externalContacts[j].ResolveContactExternal(di);
                 }
             }
         }
