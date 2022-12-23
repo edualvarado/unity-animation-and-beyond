@@ -8,10 +8,8 @@ using PositionBasedDynamics.Bodies;
 
 namespace PositionBasedDynamics.Collisions
 {
-
     internal class BodyBodyContact3d : CollisionContact3d
     {
-
         private Body3d Body0, Body1;
 
         private int i0, i1;
@@ -51,7 +49,6 @@ namespace PositionBasedDynamics.Collisions
                 normal /= len;
 
                 Vector3d delta = di * (Diameter - len) * normal;
-                //Debug.Log("delta: " + delta);
                 
                 Body0.Predicted[i0] += delta * Mass0;
                 Body0.Positions[i0] += delta * Mass0;
@@ -60,7 +57,5 @@ namespace PositionBasedDynamics.Collisions
                 Body1.Positions[i1] -= delta * Mass1;
             }
         }
-
     }
-
 }

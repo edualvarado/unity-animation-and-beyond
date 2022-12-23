@@ -7,14 +7,10 @@ using PositionBasedDynamics.Bodies;
 
 namespace PositionBasedDynamics.Collisions
 {
-
     internal abstract class CollisionContactExternal3d
     {
-
         internal abstract void ResolveContactExternal(double di);
 
         internal abstract double PrintMass();
-
     }
-
 }

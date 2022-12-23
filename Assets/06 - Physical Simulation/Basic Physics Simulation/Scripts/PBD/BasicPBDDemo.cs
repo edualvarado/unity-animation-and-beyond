@@ -20,35 +20,44 @@ namespace PositionBasedDynamics
     {
         #region Instance Fields
 
-        // Test
-        public GameObject plane;
-        public float distance;
+        // Debug
+        [Header("Debug")]
+        public bool printInformation;
+
+        // External Obstacles
+        [Header("External")]
         public GameObject obstacle;
-        [Range(0f, 1f)] public float scaleRadius;
-        
+
         // Reference Grid (White)
+        [Header("Grid")]
         public int GRID_SIZE = 2;
 
         // Global pos and rotation of mesh
+        [Header("Mesh - Global pos and rot")]
         public Vector3 translation;
         public Vector3 rotation;
 
         // Mesh
+        [Header("Mesh - Properties")]
         public Vector3 minVector3;
         public Vector3 maxVector3;
         public double radius = 0.25;
         public double stiffness = 0.2;
         public double mass = 1.0;
+        public Vector3 fxMin;
+        public Vector3 fxMax;
 
-        public float fxmin, fxmax;
-        public float fymin, fymax;
-        public float fzmin, fzmax;
-
-        public int iterations = 1; // 4 before
-
-
+        [Header("Mesh - Debug")]
         public bool drawLines = true;
         public Material sphereMaterial;
+        public Material sphereMaterialNoContact;
+        public Material sphereMaterialContact;
+        [Range(0f, 1f)] public float scaleRadius;
+
+        [Header("Solver")]
+        public int iterations = 1; // 4 before
+        public int solverIterations = 1; // 2 before
+        public int collisionIterations = 1; // 2 before
 
         #endregion
 
@@ -71,8 +80,8 @@ namespace PositionBasedDynamics
 
         #region Read-only & Static Fields
 
-        // XPBD -> deltaTs = deltaT / n
-        private const double timeStep = 1.0 / 60.0;
+        //private double timeStep = 1.0 / 60.0; 
+        private double timeStep; 
 
         private Vector3d min;
         private Vector3d max;
@@ -98,18 +107,18 @@ namespace PositionBasedDynamics
             // -----------------
 
             // Global pos and rotation of mesh
-            Matrix4x4d T2 = Matrix4x4d.Translate(new Vector3d(-0.5f, 5f, 0.5f));
-            Matrix4x4d R2 = Matrix4x4d.Rotate(new Vector3d(0f, 0f, 0f));
-            Matrix4x4d TR2 = T2 * R2;
+            //Matrix4x4d T2 = Matrix4x4d.Translate(new Vector3d(-0.5f, 5f, 0.5f));
+            //Matrix4x4d R2 = Matrix4x4d.Rotate(new Vector3d(0f, 0f, 0f));
+            //Matrix4x4d TR2 = T2 * R2;
 
-            Vector3d min2 = new Vector3d(0.5f, 0.5f, 0.5f);
-            Vector3d max2 = new Vector3d(maxVector3.x, maxVector3.y, maxVector3.z);
-            Box3d bounds2 = new Box3d(min2, max2);
-            TetrahedronsFromBounds source2 = new TetrahedronsFromBounds(radius, bounds2);
-            Body2 = new DeformableBody3d(source2, radius, mass, stiffness, TR2);
+            //Vector3d min2 = new Vector3d(0.5f, 0.5f, 0.5f);
+            //Vector3d max2 = new Vector3d(maxVector3.x, maxVector3.y, maxVector3.z);
+            //Box3d bounds2 = new Box3d(min2, max2);
+            //TetrahedronsFromBounds source2 = new TetrahedronsFromBounds(radius, bounds2);
+            //Body2 = new DeformableBody3d(source2, radius, mass, stiffness, TR2);
 
-            // TEST: Third Rigid Body
-            // -------------------------
+            // TEST: Third Rigid Body with particles
+            // -------------------------------------
 
             //Matrix4x4d T3 = Matrix4x4d.Translate(new Vector3d(0.0, 4.0f, 0.0));
             //Matrix4x4d R3 = Matrix4x4d.Rotate(new Vector3d(0.0, 0.0, 0.0));
@@ -122,35 +131,31 @@ namespace PositionBasedDynamics
             //ParticlesFromBounds source3 = new ParticlesFromBounds(spacing3, bounds3);
             //Body3 = new RidgidBody3d(source3, radius3, mass3, T3 * R3);
 
-            // TEST: Fourth Rigid Body
-            // -------------------------
+            // TEST: Fourth Rigid Body (Unity)
+            // -------------------------------
 
             ExtRigidBody = obstacle.GetComponent<Rigidbody>();
             
-            // -------------------------
-
-            // ???
+            // Damping
             System.Random rnd = new System.Random(0);
             Body1.Dampning = 1.0;
             Body1.RandomizePositions(rnd, radius * 0.01);
             Body1.RandomizeConstraintOrder(rnd);
 
-            // TEST: Second Body
             //Body2.Dampning = 1.0;
             //Body2.RandomizePositions(rnd, radius * 0.01);
             //Body2.RandomizeConstraintOrder(rnd);
 
-            // TEST: Third Body
             //Body3.Dampning = 1.0;
             //Body3.RandomizePositions(rnd, radius3 * 0.01);
-            
+
             // -------------------------
 
-            // Static Bounds (Green)
-            //Vector3d smin = new Vector3d(min.x + fxmin, min.y + fymin, min.z + fzmin);
-            //Vector3d smax = new Vector3d(min.x + fxmax, max.y + fymax, max.z + fzmax);
-            //StaticBounds = new Box3d(smin, smax);
-            //Body.MarkAsStatic(StaticBounds);
+            // Static Bounds (Green) - Fix what is inside the bounds
+            Vector3d smin = new Vector3d(min.x + fxMin.x, min.y + fxMin.y, min.z + fxMin.z);
+            Vector3d smax = new Vector3d(min.x + fxMax.x, max.y + fxMax.y, max.z + fxMax.z);
+            StaticBounds = new Box3d(smin, smax);
+            Body1.MarkAsStatic(StaticBounds);
 
             //Vector3d smin = new Vector3d(0.5f, 0.5f, 0.5f);
             //Vector3d smax = new Vector3d(1f, 1f, 1f);
@@ -159,63 +164,63 @@ namespace PositionBasedDynamics
 
             // -------------------------
 
-            // Constrainst Solver
+            // Create Solver
             Solver = new Solver3d();
 
-            // TEST
+            // Add particle-based bodies
             Solver.AddBody(Body1);
             //Solver.AddBody(Body2);
             //Solver.AddBody(Body3);
 
-            // TEST
-            Solver.AddExternalBody(ExtRigidBody); // Or include GameObject, let's see - Add in solver to list "ExternalBodies"
+            // Add external Unity bodies
+            Solver.AddExternalBody(ExtRigidBody);
 
+            // Add external forces
             Solver.AddForce(new GravitationalForce3d());
 
             // -------
 
-            // Permanent Collisions
+            // Add collisions with ground
             Collision3d ground = new PlanarCollision3d(Vector3d.UnitY, 0);
             Solver.AddCollision(ground);
 
-            // TEST TODO: Add COLLISION WITH EXTERNAL BODY
+            // Add collision with particle-based bodies
+            Collision3d bodyBody = new BodyCollision3d(Body1, Body2);
+            Solver.AddCollision(bodyBody);
+            //Collision3d bodyBody = new BodyCollision3d(Body1, Body3);
+            //Solver.AddCollision(bodyBody);
+            
+            // Add collision with external bodies
             CollisionExternal3d bodyWithExt = new BodyCollisionExternal3d(Body1, ExtRigidBody);
             Solver.AddExternalCollision(bodyWithExt);
 
-            // TEST
-            // Collision with Body2
-            Collision3d bodyBody = new BodyCollision3d(Body1, Body2);
-            Solver.AddCollision(bodyBody);
-
-            // TEST
-            // Collision with Body3
-            //Collision3d bodyBody = new BodyCollision3d(Body1, Body3);
-            //Solver.AddCollision(bodyBody);
-
             // -------
 
-            Solver.SolverIterations = 2;
-            Solver.CollisionIterations = 2;
+            Solver.SolverIterations = solverIterations;
+            Solver.CollisionIterations = collisionIterations;
             Solver.SleepThreshold = 1;
 
-            // TEST
+            // Create Spheres
             CreateSpheres();
-            CreateSpheres2();
+            //CreateSpheres2();
             //CreateSpheres3();
         }
 
         // Update is called once per frame
         void FixedUpdate()
         {
-            double dt = timeStep / iterations;
-            //double dt = Time.fixedDeltaTime / iterations; // XPBD
+            // Update time step
+            timeStep = Time.fixedDeltaTime;
+            
+            // Update dts
+            double dts = timeStep / iterations;
 
             for (int i = 0; i < iterations; i++)
-                Solver.StepPhysics(dt);
+                Solver.StepPhysics(dts);
 
-            // TEST
+            // Update Spheres
             UpdateSpheres();
-            UpdateSpheres2();
+            //UpdateSpheres2();
             //UpdateSpheres3();
         }
 
@@ -280,7 +285,9 @@ namespace PositionBasedDynamics
                 sphere.GetComponent<Collider>().enabled = true;
                 sphere.GetComponent<MeshRenderer>().material = sphereMaterial;
                 sphere.AddComponent<DetectCollision>();
-                
+
+                sphere.GetComponent<MeshRenderer>().material = sphereMaterialNoContact;
+
                 Spheres.Add(sphere);
             }
         }
@@ -339,6 +346,11 @@ namespace PositionBasedDynamics
                 {
                     Vector3d pos = Body1.Positions[i];
                     Spheres[i].transform.position = new Vector3((float)pos.x, (float)pos.y, (float)pos.z);
+
+                    if (Body1.IsContact[i])
+                        Spheres[i].GetComponent<MeshRenderer>().material = sphereMaterialContact;
+                    else
+                        Spheres[i].GetComponent<MeshRenderer>().material = sphereMaterialNoContact;
                 }
             }
         }
@@ -369,47 +381,52 @@ namespace PositionBasedDynamics
 
         public void CollisionFromChild(Collision hit, GameObject children)
         {
-            //Debug.Log("[BasicPBDDemo] Collision Detected with object: " + hit.gameObject.name + " with particle/sphere: " + children.name);
+            if(printInformation)
+                Debug.Log("[BasicPBDDemo] Collision Detected with object: " + hit.gameObject.name + " with particle/sphere: " + children.name);
 
-            for (int x = 0; x < Body1.NumParticles; x++)
+            if (printInformation)
+                Debug.Log("CHANGING SPHERE: " + int.Parse(children.name) + " with the value " + Spheres[int.Parse(children.name)].GetComponent<DetectCollision>().Hit.GetContact(0).point);
+
+            Body1.ExternalHit[int.Parse(children.name)] = hit.GetContact(0);
+            Body1.IsContact[int.Parse(children.name)] = true;
+
+            if (printInformation)
             {
-                if (x == int.Parse(children.name))
+                Debug.Log("==================");
+                for (int x = 0; x < Body1.NumParticles; x++)
                 {
-                    //Debug.Log("CHANGING SPHERE: " + x + " with the value " + Spheres[x].GetComponent<DetectCollision>().Hit.GetContact(0).point);
-
-                    Body1.ExternalHit[x] = hit.GetContact(0);
-                    Body1.IsContact[x] = true;
+                    if (Body1.IsContact[x])
+                        Debug.Log("[INFO] Sphere: " + x + " is in contact: " + Body1.IsContact[x] + " - Body1.ExternalHit[x]: " + Body1.ExternalHit[x].point);
+                    else
+                        Debug.Log("[INFO] Sphere: " + x + " NOT in contact: " + Body1.IsContact[x] + " - Body1.ExternalHit[x]: " + Body1.ExternalHit[x].point);
                 }
-            }
+                Debug.Log("==================");
 
-            //Debug.Log("==================");
-            //for (int x = 0; x < Body1.NumParticles; x++)
-            //{
-            //    if (Body1.ExternalHit[x].point != Vector3.zero)
-            //        Debug.Log("[INFO] Sphere: " + x + " - Body1.ExternalHit[x]: " + Body1.ExternalHit[x].point);
-            //    else
-            //        Debug.Log("[INFO] Sphere: " + x + " - Body1.ExternalHit[x]: 0");
-            //}
-            //Debug.Log("==================");
-            
-            // It draws multiple rays
-            //Debug.DrawRay(Body1.ExternalHit[int.Parse(children.name)].point, Body1.ExternalHit[int.Parse(children.name)].normal, Color.blue, 1f);
+                // It draws multiple rays
+                Debug.DrawRay(Body1.ExternalHit[int.Parse(children.name)].point, Body1.ExternalHit[int.Parse(children.name)].normal, Color.blue, 0.1f);
+            }
         }
 
         public void ExitCollisionFromChild(GameObject children)
         {
-            for (int x = 0; x < Body1.NumParticles; x++)
+            Body1.ExternalHit[int.Parse(children.name)] = new ContactPoint();
+            Body1.IsContact[int.Parse(children.name)] = false;
+
+            if (printInformation)
             {
-                if (x == int.Parse(children.name))
+                Debug.Log("==================");
+                for (int x = 0; x < Body1.NumParticles; x++)
                 {
-                    Body1.IsContact[x] = false;
+                    if (Body1.IsContact[x])
+                        Debug.Log("[INFO] Sphere: " + x + " is in contact: " + Body1.IsContact[x] + " - Body1.ExternalHit[x]: " + Body1.ExternalHit[x].point);
+                    else
+                        Debug.Log("[INFO] Sphere: " + x + " NOT in contact: " + Body1.IsContact[x] + " - Body1.ExternalHit[x]: " + Body1.ExternalHit[x].point);
                 }
+                Debug.Log("==================");
+
+                // It draws multiple rays
+                Debug.DrawRay(Body1.ExternalHit[int.Parse(children.name)].point, Body1.ExternalHit[int.Parse(children.name)].normal, Color.blue, 0.1f);
             }
         }
-
-        //public void OnCollisionEnter(Collision other)
-        //{
-        //    Debug.Log("OnCollisionEnter (MAIN SPHERE): " + other.gameObject.name);
-        //}
     } 
 }

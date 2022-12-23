@@ -11,7 +11,6 @@ namespace PositionBasedDynamics.Collisions
 {
     public class BodyCollisionExternal3d : CollisionExternal3d
     {
-
         private Body3d Body1 { get; set; }
 
         private int Particle1 { get; set; }

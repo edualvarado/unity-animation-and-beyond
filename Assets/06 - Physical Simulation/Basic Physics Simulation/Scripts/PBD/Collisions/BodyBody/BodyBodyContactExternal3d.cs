@@ -8,7 +8,6 @@ using PositionBasedDynamics.Bodies;
 
 namespace PositionBasedDynamics.Collisions
 {
-
     internal class BodyBodyContactExternal3d : CollisionContactExternal3d
     {
 
@@ -50,16 +49,15 @@ namespace PositionBasedDynamics.Collisions
 
             if (Body1.IsContact[i1] == true && sqLen > 1e-9)
             {
+                // TODO CHECK
                 //Debug.DrawRay(Body1.Predicted[i1].ToVector3(), normal.ToVector3(), Color.yellow);
-                Debug.DrawRay(Body1.ExternalHit[i1].point, normal.ToVector3(), Color.yellow);
+                //Debug.DrawRay(Body1.ExternalHit[i1].point, normal.ToVector3(), Color.yellow);
 
                 double len = Math.Sqrt(sqLen);
                 normal /= len;
 
+                
                 Vector3d delta = di * (Body1.ExternalHit[i1].separation) * normal;
-                //Debug.Log("Body1.ParticleRadius: " + Body1.ParticleRadius);
-                //Debug.Log("Body1.ExternalHit[i1].separation: " + Body1.ExternalHit[i1].separation);
-                //Debug.Log("(Body1.ParticleRadius - Body1.ExternalHit[i1].separation): " + (Body1.ParticleRadius - Body1.ExternalHit[i1].separation));
 
                 Body1.Predicted[i1] += delta * mass1;
                 Body1.Positions[i1] += delta * mass1;
@@ -73,7 +71,5 @@ namespace PositionBasedDynamics.Collisions
         {
             return mass1;
         }
-
     }
-
 }
