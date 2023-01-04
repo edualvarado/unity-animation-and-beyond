@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 using Common.Mathematics.LinearAlgebra;
 
@@ -30,16 +31,23 @@ namespace PositionBasedDynamics.Bodies.Deformable
 
             for (int i = 0; i < NumParticles; i++)
             {
+                Debug.Log("Particle: " + i); // Correct for 4x4x1
+                
                 Vector4d pos = RTS * source.Positions[i].xyz1;
                 Positions[i] = new Vector3d(pos.x, pos.y, pos.z);
                 Predicted[i] = Positions[i];
             }
 
             int numIndices = source.NumIndices;
+            Debug.Log("NumIndices: " + numIndices);
+            
             Indices = new int[numIndices];
 
             for (int i = 0; i < numIndices; i++)
+            {
                 Indices[i] = source.Indices[i];
+                Debug.Log("For indice: " + i + " the value is: " + Indices[i]);
+            }
 
         }
 

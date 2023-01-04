@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 using Common.Mathematics.LinearAlgebra;
 using Common.Geometry.Shapes;
@@ -27,6 +28,10 @@ namespace PositionBasedDynamics.Sources
             int numY = (int)(Bounds.Height / Diameter);
             int numZ = (int)(Bounds.Depth / Diameter);
 
+            Debug.Log("numX: " + numX);
+            Debug.Log("numY: " + numY);
+            Debug.Log("numZ: " + numZ); // If numZ is 1, does not create edges
+
             Positions = new Vector3d[numX * numY * numZ];
 
             for (int z = 0; z < numZ; z++)
@@ -45,9 +50,11 @@ namespace PositionBasedDynamics.Sources
                 }
             }
 
-            Indices = new List<int>();
-            for (int z = 0; z < numZ - 1; z++)
+            Indices = new List<int>(); // Here is the error - does not enter
+            for (int z = 0; z < numZ - 1; z++) // Before - 1
             {
+                Debug.Log("z: " + z);
+                
                 for (int y = 0; y < numY - 1; y++)
                 {
                     for (int x = 0; x < numX - 1; x++)
