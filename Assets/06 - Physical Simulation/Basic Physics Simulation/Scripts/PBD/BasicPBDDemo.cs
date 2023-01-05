@@ -26,7 +26,8 @@ namespace PositionBasedDynamics
 
         // External Obstacles
         [Header("External")]
-        public GameObject obstacle;
+        public GameObject obstacle1;
+        public GameObject obstacle2;
 
         // Reference Grid (White)
         [Header("Grid")]
@@ -62,7 +63,9 @@ namespace PositionBasedDynamics
         public double depth2 = 5.0;
         public double stretchStiffness = 0.25;
         public double bendStiffness = 0.5;
-        
+        public Vector3 fxMinCloth;
+        public Vector3 fxMaxCloth;
+
         [Header("Mesh - Debug")]
         public bool drawLines = true;
         public Material sphereMaterial;
@@ -84,7 +87,8 @@ namespace PositionBasedDynamics
 
         private DeformableBody3d Body1 { get; set; }
         private ClothBody3d Body2 { get; set; }
-        private Rigidbody ExtRigidBody { get; set; }
+        private Rigidbody ExtRigidBody1 { get; set; }
+        private Rigidbody ExtRigidBody2 { get; set; }
 
         private Solver3d Solver { get; set; }
 
@@ -126,7 +130,7 @@ namespace PositionBasedDynamics
             // 2. Create Cloth Body
             // ==========================
 
-            Matrix4x4d TCloth = Matrix4x4d.Translate(new Vector3d(translation2.x, translation2.y + height2, translation2.z));
+            Matrix4x4d TCloth = Matrix4x4d.Translate(new Vector3d(translation2.x, translation2.y, translation2.z));
             Matrix4x4d RCloth = Matrix4x4d.Rotate(new Vector3d(rotation2.x, rotation2.y, rotation2.z));
             Matrix4x4d TRCloth = TCloth * RCloth;
 
@@ -135,9 +139,9 @@ namespace PositionBasedDynamics
             Body2 = new ClothBody3d(source2, radius1, mass1, stretchStiffness, bendStiffness, TRCloth);
 
             // Add external body
+            ExtRigidBody1 = obstacle1.GetComponent<Rigidbody>();
+            ExtRigidBody2 = obstacle2.GetComponent<Rigidbody>();
 
-            ExtRigidBody = obstacle.GetComponent<Rigidbody>();
-            
             // Damping
             System.Random rnd = new System.Random(0);
             Body1.Dampning = 1.0;
@@ -151,13 +155,17 @@ namespace PositionBasedDynamics
             // -------------------------
 
             // Static Bounds (Green) - Fix what is inside the bounds
-            Vector3d smin = new Vector3d(min.x + fxMin.x, min.y + fxMin.y, min.z + fxMin.z);
-            Vector3d smax = new Vector3d(min.x + fxMax.x, max.y + fxMax.y, max.z + fxMax.z);
+            //Vector3d smin = new Vector3d(min.x + fxMin.x, min.y + fxMin.y, min.z + fxMin.z);
+            //Vector3d smax = new Vector3d(min.x + fxMax.x, max.y + fxMax.y, max.z + fxMax.z);
+            Vector3d smin = new Vector3d(fxMin.x, fxMin.y, fxMin.z);
+            Vector3d smax = new Vector3d(fxMax.x, fxMax.y, fxMax.z);
             StaticBounds1 = new Box3d(smin, smax);
             Body1.MarkAsStatic(StaticBounds1);
 
-            Vector3d sminCloth = new Vector3d(-width2 / 2 - 0.1, height2 - 0.1, -depth2 / 2 - 0.1);
-            Vector3d smaxCloth = new Vector3d(width2 / 2 + 0.1, height2 + 0.1, -depth2 / 2 + 0.1);
+            //Vector3d sminCloth = new Vector3d(-width2 / 2 - 0.1, height2 - 0.1, -depth2 / 2 - 0.1);
+            //Vector3d smaxCloth = new Vector3d(width2 / 2 + 0.1, height2 + 0.1, -depth2 / 2 + 0.1);
+            Vector3d sminCloth = new Vector3d(fxMinCloth.x, fxMinCloth.y, fxMinCloth.z);
+            Vector3d smaxCloth = new Vector3d(fxMaxCloth.x, fxMaxCloth.y, fxMaxCloth.z);
             StaticBounds2 = new Box3d(sminCloth, smaxCloth);
             Body2.MarkAsStatic(StaticBounds2);
 
@@ -171,7 +179,8 @@ namespace PositionBasedDynamics
             Solver.AddBody(Body2);
 
             // Add external Unity bodies
-            Solver.AddExternalBody(ExtRigidBody);
+            Solver.AddExternalBody(ExtRigidBody1);
+            Solver.AddExternalBody(ExtRigidBody2);
 
             // Add external forces
             Solver.AddForce(new GravitationalForce3d());
@@ -179,7 +188,7 @@ namespace PositionBasedDynamics
             // -------
 
             // Add collisions with ground
-            Collision3d ground = new PlanarCollision3d(Vector3d.UnitY, 0);
+            Collision3d ground = new PlanarCollision3d(Vector3d.UnitY, 0); // Before 0 - changed to counteract the scaling factor
             Solver.AddCollision(ground);
 
             // Add collision with particle-based bodies
@@ -187,11 +196,17 @@ namespace PositionBasedDynamics
             Solver.AddCollision(bodyBody);
             
             // Add collision with external bodies
-            CollisionExternal3d bodyWithExt = new BodyCollisionExternal3d(Body1, ExtRigidBody);
+            CollisionExternal3d bodyWithExt = new BodyCollisionExternal3d(Body1, ExtRigidBody1);
             Solver.AddExternalCollision(bodyWithExt);
             
-            CollisionExternal3d bodyWithExt2 = new BodyCollisionExternal3d(Body2, ExtRigidBody);
-            Solver.AddExternalCollision(bodyWithExt2);
+            //CollisionExternal3d bodyWithExt2 = new BodyCollisionExternal3d(Body2, ExtRigidBody1);
+            //Solver.AddExternalCollision(bodyWithExt2);
+
+            //CollisionExternal3d bodyWithExt3 = new BodyCollisionExternal3d(Body1, ExtRigidBody2);
+            //Solver.AddExternalCollision(bodyWithExt3);
+
+            CollisionExternal3d bodyWithExt4 = new BodyCollisionExternal3d(Body2, ExtRigidBody2);
+            Solver.AddExternalCollision(bodyWithExt4);
 
             // -------
 
@@ -252,6 +267,7 @@ namespace PositionBasedDynamics
                 DrawLines.DrawVertices(LINE_MODE.TRIANGLES, camera, Color.red, Body2.Positions, Body2.Indices, m);
 
                 DrawLines.DrawBounds(camera, Color.green, StaticBounds1, Matrix4x4d.Identity);
+                DrawLines.DrawBounds(camera, Color.green, StaticBounds2, Matrix4x4d.Identity);
 
             }
         }

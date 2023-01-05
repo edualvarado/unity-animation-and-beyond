@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 using Common.Geometry.Shapes;
 using Common.Mathematics.LinearAlgebra;
@@ -55,11 +56,17 @@ namespace PositionBasedDynamics.Bodies.Cloth
             int height = nCols + 1;
             int width = nRows + 1;
 
+            Debug.Log("nCols: " + nCols);
+            Debug.Log("nRows: " + nRows);
+
+            // DISTANCE CONSTRAINTS
+
             // Horizontal
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < (width - 1); x++)
                 {
+                    Debug.Log("[INFO] Adding Horizontal Distance Contraint between particle " + (y * width + x) + " and " + (y * width + x + 1));
                     Constraints.Add(new DistanceConstraint3d(this, y * width + x, y * width + x + 1, StretchStiffness));
                 }
             }
@@ -69,6 +76,7 @@ namespace PositionBasedDynamics.Bodies.Cloth
             {
                 for (int y = 0; y < (height - 1); y++)
                 {
+                    Debug.Log("[INFO] Adding Vertical Distance Constraint between particle " + (y * width + x) + " and " + ((y + 1) * width + x));
                     Constraints.Add(new DistanceConstraint3d(this, y * width + x, (y + 1) * width + x, StretchStiffness));
                 }
             }
@@ -79,10 +87,15 @@ namespace PositionBasedDynamics.Bodies.Cloth
             {
                 for (int x = 0; x < (width - 1); x++)
                 {
+                    Debug.Log("[INFO] Adding Shearing Distance Constraint between particle " + (y * width + x) + " and " + ((y + 1) * width + x + 1));
+                    Debug.Log("[INFO] Adding Shearing Distance Constraint between particle " + ((y + 1) * width + x) + " and " + (y * width + x + 1));
+
                     Constraints.Add(new DistanceConstraint3d(this, y * width + x, (y + 1) * width + x + 1, StretchStiffness));
                     Constraints.Add(new DistanceConstraint3d(this, (y + 1) * width + x, y * width + x + 1, StretchStiffness));
                 }
             }
+
+            // BENDING CONSTRAINTS
 
             //add vertical constraints
             for (int i = 0; i <= nRows; i++)
@@ -93,6 +106,7 @@ namespace PositionBasedDynamics.Bodies.Cloth
                     int i1 = (j + 1) * (nRows + 1) + i;
                     int i2 = (j + 2) * (nRows + 1) + i;
 
+                    Debug.Log("[INFO] Adding Vertical Bending Constraint between particle " + i0 + ", " + i1 + " and " + i2);
                     Constraints.Add(new BendingConstraint3d(this, i0, i1, i2, BendStiffness));
                 }
             }
@@ -106,6 +120,7 @@ namespace PositionBasedDynamics.Bodies.Cloth
                     int i1 = j * (nRows + 1) + (i + 1);
                     int i2 = j * (nRows + 1) + (i + 2);
 
+                    Debug.Log("[INFO] Adding Horizontal Bending Constraint between particle " + i0 + ", " + i1 + " and " + i2);
                     Constraints.Add(new BendingConstraint3d(this, i0, i1, i2, BendStiffness));
                 }
             }
