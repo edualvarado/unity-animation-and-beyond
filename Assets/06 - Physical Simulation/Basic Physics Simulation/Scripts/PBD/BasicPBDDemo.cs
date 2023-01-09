@@ -71,6 +71,7 @@ namespace PositionBasedDynamics
         public Material sphereMaterial;
         public Material sphereMaterialNoContact;
         public Material sphereMaterialContact;
+        public Material sphereMaterialBroken;
         [Range(0f, 1f)] public float scaleRadius;
 
         [Header("Solver")]
@@ -337,10 +338,12 @@ namespace PositionBasedDynamics
                     Vector3d pos = Body1.Positions[i];
                     Spheres[i].transform.position = new Vector3((float)pos.x, (float)pos.y, (float)pos.z);
 
-                    if (Body1.IsContact[i])
+                    if (Body1.IsContact[i] && !Body1.IsBroken[i])
                         Spheres[i].GetComponent<MeshRenderer>().material = sphereMaterialContact;
-                    else
+                    else if (!Body1.IsContact[i] && !Body1.IsBroken[i])
                         Spheres[i].GetComponent<MeshRenderer>().material = sphereMaterialNoContact;
+                    else if (Body1.IsBroken[i])
+                        Spheres[i].GetComponent<MeshRenderer>().material = sphereMaterialBroken;
                 }
             }
         }
@@ -354,10 +357,12 @@ namespace PositionBasedDynamics
                     Vector3d pos = Body2.Positions[i];
                     Spheres2[i].transform.position = new Vector3((float)pos.x, (float)pos.y, (float)pos.z);
 
-                    if (Body2.IsContact[i])
+                    if (Body2.IsContact[i] && !Body2.IsBroken[i])
                         Spheres2[i].GetComponent<MeshRenderer>().material = sphereMaterialContact;
-                    else
+                    else if (!Body2.IsContact[i] && !Body2.IsBroken[i])
                         Spheres2[i].GetComponent<MeshRenderer>().material = sphereMaterialNoContact;
+                    else if (Body2.IsBroken[i])
+                        Spheres2[i].GetComponent<MeshRenderer>().material = sphereMaterialBroken;
                 }
             }
         }

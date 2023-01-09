@@ -98,6 +98,7 @@ namespace PositionBasedDynamics.Solvers
 
             UpdateBounds();
 
+            RemoveConstrainPositions();
         }
 
         private void AppyExternalForces(double dt)
@@ -236,6 +237,13 @@ namespace PositionBasedDynamics.Solvers
             }
         }
 
+        // TEST
+        private void RemoveConstrainPositions()
+        {
+            for (int i = 0; i < Bodies.Count; i++)
+            {
+                Bodies[i].RemoveConstrainPositions();
+            }
+        }
     }
-
 }

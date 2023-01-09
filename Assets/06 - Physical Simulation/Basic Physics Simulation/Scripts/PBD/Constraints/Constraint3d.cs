@@ -28,6 +28,9 @@ namespace PositionBasedDynamics.Constraints
 
         }
 
+        internal virtual void RemoveConstrainPositions()
+        {
+
+        }
     }
-    
 }

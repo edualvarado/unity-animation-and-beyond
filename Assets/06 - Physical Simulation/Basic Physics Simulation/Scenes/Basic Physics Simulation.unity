@@ -199,8 +199,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 24095181}
-  m_LocalRotation: {x: 0.100715324, y: -0.8723295, z: 0.20267724, w: 0.43338177}
-  m_LocalPosition: {x: 10.824078, y: 7.426704, z: 6.614356}
+  m_LocalRotation: {x: 0.06532014, y: 0.92163837, z: -0.17772658, w: 0.3387172}
+  m_LocalPosition: {x: -2.6, y: 3.8, z: 5.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1342,13 +1342,14 @@ MonoBehaviour:
   height2: 4
   depth2: 1.5
   stretchStiffness: 0.25
-  bendStiffness: 1
+  bendStiffness: 0.8
   fxMinCloth: {x: 1, y: -1, z: -1}
   fxMaxCloth: {x: 3, y: 1, z: 1}
   drawLines: 1
   sphereMaterial: {fileID: 2100000, guid: 61e3b86ec85bd0140bf4f842f5d75aef, type: 2}
   sphereMaterialNoContact: {fileID: 2100000, guid: 2018d320d3499f945a7110a2f4b50da5, type: 2}
   sphereMaterialContact: {fileID: 2100000, guid: 2161495511b7bf04fb31b88bceed4846, type: 2}
+  sphereMaterialBroken: {fileID: 2100000, guid: 82a39e206f8e53b4d92237451ae0a836, type: 2}
   scaleRadius: 1
   iterations: 2
   solverIterations: 1

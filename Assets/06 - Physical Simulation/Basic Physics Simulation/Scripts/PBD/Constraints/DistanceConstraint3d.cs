@@ -33,7 +33,7 @@ namespace PositionBasedDynamics.Constraints
         {
             double mass = Body.ParticleMass;
             double invMass = 1.0 / mass;
-            double sum = mass * 2.0;
+            double sum = mass / 2.0; // Initially was mass * 2, shouldn't be / 2?
 
             Vector3d n = Body.Predicted[i1] - Body.Predicted[i0];
             double d = n.Magnitude;

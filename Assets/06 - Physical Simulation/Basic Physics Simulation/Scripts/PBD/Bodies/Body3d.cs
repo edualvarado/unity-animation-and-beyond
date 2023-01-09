@@ -34,6 +34,8 @@ namespace PositionBasedDynamics.Bodies
         public bool[] IsContact { get; set; }
         // TEST
         public ContactPoint[] ExternalHit { get; set; }
+        // TEST
+        public bool[] IsBroken { get; set; }
 
         public Box3d Bounds { get; private set; }
 
@@ -49,6 +51,7 @@ namespace PositionBasedDynamics.Bodies
             Velocities = new Vector3d[numParticles];
             IsContact = new bool[numParticles]; // TEST
             ExternalHit = new ContactPoint[numParticles]; // TEST
+            IsBroken = new bool[numParticles]; // TEST
             Constraints = new List<Constraint3d>();
             StaticConstraints = new List<StaticConstraint3d>();
 
@@ -89,6 +92,15 @@ namespace PositionBasedDynamics.Bodies
                 StaticConstraints[i].ConstrainVelocities();
             }
 
+        }
+
+        // TEST
+        internal void RemoveConstrainPositions()
+        {
+            for (int i = 0; i < Constraints.Count; i++)
+            {
+                Constraints[i].RemoveConstrainPositions();
+            }
         }
 
         public void RandomizePositions(System.Random rnd, double amount)

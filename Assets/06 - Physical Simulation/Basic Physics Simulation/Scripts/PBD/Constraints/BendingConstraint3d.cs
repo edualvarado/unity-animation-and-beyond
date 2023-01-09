@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 using Common.Mathematics.LinearAlgebra;
 
@@ -14,6 +15,12 @@ namespace PositionBasedDynamics.Constraints
         private double RestLength { get; set; }
 
         private double Stiffness { get; set; }
+
+        // TEST
+        private double Diff { get; set; }
+        private double CurrentAngle { get; set; }
+        private float CurrentAngleAlt { get; set; }
+        private double ThresholdAngle { get; set; }
 
         private readonly int i0, i1, i2;
 
@@ -33,11 +40,46 @@ namespace PositionBasedDynamics.Constraints
         {
 
             Vector3d center = (Body.Predicted[i0] + Body.Predicted[i1] + Body.Predicted[i2]) / 3.0;
-
             Vector3d dirCenter = Body.Predicted[i2] - center;
 
             double distCenter = dirCenter.Magnitude;
-            double diff = 1.0 - (RestLength / distCenter);
+            double diff = 1.0 - (RestLength / distCenter); // X
+            Diff = diff;
+
+            // TEST CURRENT ANGLE 1
+            double currentAngle;
+            if ((distCenter / RestLength) > 1)
+                currentAngle = Math.Acos(1) * Mathf.Rad2Deg;
+            else if ((distCenter / RestLength) < -1)
+                currentAngle = Math.Acos(-1) * Mathf.Rad2Deg;
+            else
+                currentAngle = Math.Acos(distCenter / RestLength) * Mathf.Rad2Deg;
+
+            CurrentAngle = currentAngle;
+
+            // TEST CURRENT ANGLE 2
+            float currentAngleAlt;
+            currentAngleAlt = Vector3.Angle((Body.Predicted[i0] - Body.Predicted[i1]).ToVector3(), (Body.Predicted[i2] - Body.Predicted[i1]).ToVector3());
+            CurrentAngleAlt = currentAngleAlt;
+
+            // TEST
+            //if (i0 == 0 && i1 == 3 && i2 == 6)
+            //{
+            //    Debug.Log("Between: " + i0 + ", " + i1 + " and " + i2);
+            //    Debug.Log("distCenter: " + distCenter);
+            //    Debug.Log("RestLength: " + RestLength);
+            //    Debug.Log("(distCenter / RestLength): " + (distCenter / RestLength));
+            //    Debug.Log("Arcos(distCenter / RestLength): " + CurrentAngle); // WRONG, look here!
+
+            //    Debug.Log("1.0 - (RestLength / distCenter): " + Diff);
+            //    Debug.Log("Arcos(diff): " + (Math.Acos(Diff) * 180.0 / Math.PI));
+
+            //    Debug.Log("currentAngleAlt : " + (180f - CurrentAngleAlt));
+            //}
+
+            double thresholdAngle = 35;
+            ThresholdAngle = thresholdAngle;
+
             double mass = Body.ParticleMass;
 
             double w = mass + mass * 2.0f + mass;
@@ -52,9 +94,48 @@ namespace PositionBasedDynamics.Constraints
 
             Vector3d fc = -Stiffness * (4.0 * mass / w) * dirForce * di;
             Body.Predicted[i2] += fc;
-
         }
 
-    }
+        internal override void RemoveConstrainPositions()
+        {
+            //Debug.Log("Looking to remove constraint for: " + i0 + ", " + i1 + " and " + i2 + " - the angle (distCenter / RestLength) here is: " + CurrentAngle);
 
+            // For testing: Check only first triple
+            if (i0 == 0 && i1 == 3 && i2 == 6)
+            {
+                //Debug.Log("Between: " + i0 + ", " + i1 + " and " + i2);
+                //Debug.Log("Arcos(distCenter / RestLength): " + CurrentAngle); // WRONG, look here!
+                //Debug.Log("Arcos(diff): " + (Math.Acos(Diff) * 180.0 / Math.PI));
+                //Debug.Log("currentAngleAlt : " + (180f - CurrentAngleAlt));
+
+                //if (CurrentAngle > 15f)
+                //{
+                //    Body.Constraints.Remove(this);
+                //}
+
+                if ((180f - CurrentAngleAlt) > ThresholdAngle)
+                {
+                    //Debug.Log("REMOVE Between: " + i0 + ", " + i1 + " and " + i2);
+                    //Body.IsBroken[i1] = true;
+                    //Body.Constraints.Remove(this);
+                }
+            }
+
+            // For testing: Check only first row
+            if ((i0 == 0 && i1 == 3 && i2 == 6) || (i0 == 1 && i1 == 4 && i2 == 7) || (i0 == 2 && i1 == 5 && i2 == 8))
+            {
+                //Debug.Log("Between: " + i0 + ", " + i1 + " and " + i2);
+                //Debug.Log("Arcos(distCenter / RestLength): " + CurrentAngle); // WRONG, look here!
+                //Debug.Log("Arcos(diff): " + (Math.Acos(Diff) * 180.0 / Math.PI));
+                //Debug.Log("currentAngleAlt : " + (180f - CurrentAngleAlt));
+
+                if ((180f - CurrentAngleAlt) > ThresholdAngle)
+                {
+                    Debug.Log("REMOVE Between: " + i0 + ", " + i1 + " and " + i2);
+                    Body.IsBroken[i1] = true;
+                    Body.Constraints.Remove(this);
+                }
+            }
+        }
+    }
 }
