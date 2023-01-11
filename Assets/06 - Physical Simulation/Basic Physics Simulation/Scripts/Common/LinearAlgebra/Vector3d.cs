@@ -123,6 +123,11 @@ namespace Common.Mathematics.LinearAlgebra
             return new Vector3((float)x, (float)y, (float)z);
         }
 
+        public Vector3[] ToVector3Array()
+        {
+            return new Vector3[] { new Vector3((float)x, (float)y, (float)z) };
+        }
+
         /// <summary>
         /// The length of the vector.
         /// </summary>

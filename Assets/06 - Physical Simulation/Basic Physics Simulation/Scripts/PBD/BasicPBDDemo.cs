@@ -68,6 +68,9 @@ namespace PositionBasedDynamics
 
         [Header("Mesh - Debug")]
         public bool drawLines = true;
+        public bool drawMesh = true;
+        public bool drawSpheres = true;
+        public Mesh mesh;
         public Material sphereMaterial;
         public Material sphereMaterialNoContact;
         public Material sphereMaterialContact;
@@ -216,8 +219,11 @@ namespace PositionBasedDynamics
             Solver.SleepThreshold = 1;
 
             // Create Spheres
-            CreateSpheres();
-            CreateSpheres2();
+            if (drawSpheres)
+            {
+                CreateSpheres();
+                CreateSpheres2();
+            }
         }
 
         // Update is called once per frame
@@ -233,8 +239,11 @@ namespace PositionBasedDynamics
                 Solver.StepPhysics(dts);
 
             // Update Spheres
-            UpdateSpheres();
-            UpdateSpheres2();
+            if (drawSpheres)
+            {
+                UpdateSpheres();
+                UpdateSpheres2(); 
+            }
         }
 
         void OnDestroy()
@@ -270,6 +279,52 @@ namespace PositionBasedDynamics
                 DrawLines.DrawBounds(camera, Color.green, StaticBounds1, Matrix4x4d.Identity);
                 DrawLines.DrawBounds(camera, Color.green, StaticBounds2, Matrix4x4d.Identity);
 
+            }
+
+            if (drawMesh)
+            {
+                Vector3[] vertices = new Vector3[Body2.Positions.Length * 2]; // 24
+                Vector3[] normals = new Vector3[(Body2.Indices.Length / 3) * 2]; // 24
+
+                GetComponent<MeshFilter>().mesh = mesh = new Mesh();
+                mesh.name = "TextureMesh";
+                
+                for (int i = 0; i < Body2.Positions.Length; i++) // From 0 to 12
+                {
+                    vertices[i] = Body2.Positions[i].ToVector3();
+                }
+
+                for (int i = Body2.Positions.Length; i < Body2.Positions.Length * 2; i++) // From 12 to 24 // TEST
+                {
+                    vertices[i] = Body2.Positions[i - Body2.Positions.Length].ToVector3();
+                }
+
+                mesh.vertices = vertices;
+
+                int[] triangles = new int[Body2.Indices.Length * 2]; // 72
+
+                for (int i = 0; i < Body2.Indices.Length; i++) // From 0 to 36
+                {
+                    triangles[i] = Body2.Indices[i];
+                }
+
+                for (int i = Body2.Indices.Length; i < Body2.Indices.Length * 2; i++) // From 36 to 72 // ERROR - FLIP NORMAL
+                {
+                    triangles[i] = Body2.Indices[i - Body2.Indices.Length];
+                }
+
+                mesh.triangles = triangles;
+
+                //Debug.Log("Normals: " + normals.Length);
+
+                //for (var n = 12; n < normals.Length; n++)
+                //{
+                //    normals[n] = -normals[n];
+                //}
+
+                //mesh.normals = normals;
+
+                mesh.RecalculateNormals();
             }
         }
 

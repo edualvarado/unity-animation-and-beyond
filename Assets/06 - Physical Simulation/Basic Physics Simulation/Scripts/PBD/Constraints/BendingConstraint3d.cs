@@ -77,7 +77,7 @@ namespace PositionBasedDynamics.Constraints
             //    Debug.Log("currentAngleAlt : " + (180f - CurrentAngleAlt));
             //}
 
-            double thresholdAngle = 35;
+            double thresholdAngle = 35; // TODO: MODIFY
             ThresholdAngle = thresholdAngle;
 
             double mass = Body.ParticleMass;
@@ -115,9 +115,9 @@ namespace PositionBasedDynamics.Constraints
 
                 if ((180f - CurrentAngleAlt) > ThresholdAngle)
                 {
-                    //Debug.Log("REMOVE Between: " + i0 + ", " + i1 + " and " + i2);
-                    //Body.IsBroken[i1] = true;
-                    //Body.Constraints.Remove(this);
+                    Debug.Log("REMOVE Between: " + i0 + ", " + i1 + " and " + i2);
+                    Body.IsBroken[i1] = true;
+                    Body.Constraints.Remove(this);
                 }
             }
 
@@ -131,9 +131,9 @@ namespace PositionBasedDynamics.Constraints
 
                 if ((180f - CurrentAngleAlt) > ThresholdAngle)
                 {
-                    Debug.Log("REMOVE Between: " + i0 + ", " + i1 + " and " + i2);
-                    Body.IsBroken[i1] = true;
-                    Body.Constraints.Remove(this);
+                    //Debug.Log("REMOVE Between: " + i0 + ", " + i1 + " and " + i2);
+                    //Body.IsBroken[i1] = true;
+                    //Body.Constraints.Remove(this);
                 }
             }
         }
