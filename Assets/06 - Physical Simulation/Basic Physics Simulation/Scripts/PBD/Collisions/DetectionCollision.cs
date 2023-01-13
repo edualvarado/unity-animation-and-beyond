@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace PositionBasedDynamics.Collisions
 {
-    public class DetectCollision : MonoBehaviour
+    public class DetectionCollision : MonoBehaviour
     {
         public Collision Hit { get; set; }
 
@@ -25,16 +25,11 @@ namespace PositionBasedDynamics.Collisions
             // Forward to the parent and let know a collision happened
 
             //BasicPBDDemo parentScript = transform.parent.GetComponent<BasicPBDDemo>();
-            BasicPBDDemo parentScript = root.GetComponent<BasicPBDDemo>(); // BasicPBDDemo before VegetationCreator
-
-            if (transform.parent.gameObject.name == "Tet")
-                parentScript.CollisionFromChildBody1(Hit, this.gameObject);
+            VegetationCreator parentScript = root.GetComponent<VegetationCreator>(); // BasicPBDDemo before VegetationCreator
 
             if (transform.parent.gameObject.name == "Cloth")
                 parentScript.CollisionFromChildBody2(Hit, this.gameObject);
 
-            if (transform.parent.gameObject.name == "Cloth3")
-                parentScript.CollisionFromChildBody3(Hit, this.gameObject);
         }
 
         private void OnCollisionExit(Collision collision)
@@ -45,16 +40,13 @@ namespace PositionBasedDynamics.Collisions
             //Debug.Log("[DetectCollision] Sphere: " + int.Parse(gameObject.name) + ": Hit " + Hit.GetContact(0).point);
 
             // Forward to the parent and let know a collision happened
-            BasicPBDDemo parentScript = transform.parent.GetComponent<BasicPBDDemo>();
+            //BasicPBDDemo parentScript = transform.parent.GetComponent<BasicPBDDemo>();
+            VegetationCreator parentScript = root.GetComponent<VegetationCreator>();
 
-            if (transform.parent.gameObject.name == "Tet")
-                parentScript.ExitCollisionFromChildBody1(this.gameObject);
 
             if (transform.parent.gameObject.name == "Cloth")
                 parentScript.ExitCollisionFromChildBody2(this.gameObject);
 
-            if (transform.parent.gameObject.name == "Cloth3")
-                parentScript.ExitCollisionFromChildBody3(this.gameObject);
         }
-    } 
+    }
 }

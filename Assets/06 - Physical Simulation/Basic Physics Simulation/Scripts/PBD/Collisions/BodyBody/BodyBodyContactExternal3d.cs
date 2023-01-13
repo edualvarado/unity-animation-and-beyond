@@ -36,9 +36,10 @@ namespace PositionBasedDynamics.Collisions
             Diameter = 2 * Body1.ParticleRadius;
             Diameter2 = Diameter * Diameter;
 
+            // TODO FIX
             double sum = Body1.ParticleMass + Body2.mass;
-            mass1 = Body1.ParticleMass / sum;
-            mass2 = Body2.mass / sum;
+            mass1 = Body1.ParticleMass; // Body1.ParticleMass / sum
+            mass2 = Body2.mass; // Body2.mass / sum;
         }
 
         internal override void ResolveContactExternal(double di)

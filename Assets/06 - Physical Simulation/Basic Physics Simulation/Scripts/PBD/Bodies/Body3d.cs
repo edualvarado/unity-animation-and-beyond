@@ -36,6 +36,8 @@ namespace PositionBasedDynamics.Bodies
         public ContactPoint[] ExternalHit { get; set; }
         // TEST
         public bool[] IsBroken { get; set; }
+        // TEST
+        public bool[] IsStatic { get; set; }
 
         public Box3d Bounds { get; private set; }
 
@@ -52,6 +54,7 @@ namespace PositionBasedDynamics.Bodies
             IsContact = new bool[numParticles]; // TEST
             ExternalHit = new ContactPoint[numParticles]; // TEST
             IsBroken = new bool[numParticles]; // TEST
+            IsStatic = new bool[numParticles]; // TEST
             Constraints = new List<Constraint3d>();
             StaticConstraints = new List<StaticConstraint3d>();
 
@@ -139,6 +142,7 @@ namespace PositionBasedDynamics.Bodies
             {
                 if (bounds.Contains(Positions[i]))
                 {
+                    IsStatic[i] = true;
                     StaticConstraints.Add(new StaticConstraint3d(this, i));
                 }
             }

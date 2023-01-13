@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 using Common.Mathematics.LinearAlgebra;
 
@@ -30,12 +31,13 @@ namespace PositionBasedDynamics.Collisions
 
                 int numParticles = body.NumParticles;
                 double radius = body.ParticleRadius;
-
+                
                 for (int i = 0; i < numParticles; i++)
-                {
+                {                    
                     double d = Vector3d.Dot(Normal, body.Predicted[i]) + Distance - radius;
 
-                    if (d < 0.0)
+                    // Only detects collision WITH GROUND! if the sphere is not static
+                    if (d < 0.0 && !body.IsStatic[i])
                         contacts.Add(new BodyPlaneContact3d(body, i, Normal, Distance));
                 }
             }

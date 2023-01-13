@@ -37,6 +37,7 @@ namespace PositionBasedDynamics.Collisions
                     
                     for (int x = 0; x < numParticles1; x++)
                     {
+
                         // if there is a contact of this particle with the external body, add it to the list
                         if (body1.IsContact[x])
                         {
