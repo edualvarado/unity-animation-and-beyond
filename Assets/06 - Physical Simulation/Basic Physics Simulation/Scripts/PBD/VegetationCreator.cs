@@ -19,14 +19,14 @@ namespace PositionBasedDynamics
     public class VegetationCreator : MonoBehaviour
     {
         #region Instance Fields
-
+        
         // Debug
         [Header("Debug")]
         public bool printInformation;
 
         // External Obstacles
         [Header("External")]
-        public GameObject obstacle2;
+        public GameObject obstacle;
         public GameObject terrain;
 
         // Reference Grid (White)
@@ -34,35 +34,34 @@ namespace PositionBasedDynamics
         public int GRID_SIZE = 2;
 
         // Global pos and rotation of cloth
-        [Header("Body - Global pos and rot")]
-        public GameObject cloth;
+        [Header("Body - Global position and orientation")]
+        public GameObject cloth; // TODO For each body
         public Vector3 translation;
         public Vector3 rotation;
 
-        [Header("Body - Properties")]
-        public int numParticlesX = 3;
-        public int numParticlesY = 3;
+        [Header("Body Type - Properties")]
+        public Vector2 plantSize;
         public double mass = 1.0;
         public double diameter = 0.5;
-        //public double width = 5.0;
-        //public double depth = 5.0;
+        [Range(0f, 1f)] public float scaleRadius;
+
+        [Header("Body - Stiffness")]
         public double stretchStiffness = 0.25;
         public double bendStiffness = 0.5;
-        public Vector3 fxMinCloth;
-        public Vector3 fxMaxCloth;
 
         [Header("Mesh - Debug")]
         public bool drawLines = true;
         public bool drawMesh = true;
         public bool drawSpheres = true;
+
+        [Header("Mesh - Properties")]
         public Mesh mesh;
         public Material sphereMaterial;
         public Material sphereMaterialNoContact;
         public Material sphereMaterialContact;
         public Material sphereMaterialBroken;
-        [Range(0f, 1f)] public float scaleRadius;
 
-        [Header("Solver")]
+        [Header("PBD Solver")]
         public int iterations = 1; // 4 before
         public int solverIterations = 1; // 2 before
         public int collisionIterations = 1; // 2 before
@@ -71,16 +70,12 @@ namespace PositionBasedDynamics
 
         #region Instance Properties
 
-        private List<GameObject> Spheres2 { get; set; }
-
-        private ClothBody3d Body2 { get; set; }
-
-        private Rigidbody ExtRigidBody2 { get; set; }
-        private Rigidbody Terrain { get; set; }
-
+        private List<GameObject> Spheres { get; set; }
+        private Plant PlantType { get; set; }
+        private ClothBody3d Body { get; set; }
+        private Rigidbody ExtRigidBody { get; set; }
         private Solver3d Solver { get; set; }
-
-        private Box3d StaticBounds2 { get; set; }
+        private Box3d StaticBounds { get; set; }
 
         #endregion
 
@@ -88,72 +83,46 @@ namespace PositionBasedDynamics
 
         //private double timeStep = 1.0 / 60.0; 
         private double timeStep;
-
-        private Vector3d min;
-        private Vector3d max;
         
         #endregion
 
         // Start is called before the first frame update
         void Start()
         {
+            // TODO: List of plants?
+            PlantType = new Plant(plantSize, mass, diameter, scaleRadius, stretchStiffness, bendStiffness);
+            Body = PlantType.CreatePlant(translation, rotation);
 
-            // 2. Create Cloth Body
-            // ==========================
-
-            // Global pos and rotation of mesh
-
-            // Always translate upwards s.t. we leave a virtual row underground
-            double height = ((numParticlesY * diameter) / 2) - diameter;
-
-            Matrix4x4d TCloth = Matrix4x4d.Translate(new Vector3d(translation.x, height, translation.z)); // should be height
-            Matrix4x4d RCloth = Matrix4x4d.Rotate(new Vector3d(rotation.x, rotation.y, rotation.z));
-            Matrix4x4d TRCloth = TCloth * RCloth;
-
-            // Create cloth body
-
-            double width = (numParticlesX - 1) * diameter;
-            double depth = (numParticlesY - 1) * diameter;
-
-            TrianglesFromGrid source2 = new TrianglesFromGrid(diameter / 2, width, depth);
-            Body2 = new ClothBody3d(source2, diameter / 2, mass, stretchStiffness, bendStiffness, TRCloth);
-
-            ExtRigidBody2 = obstacle2.GetComponent<Rigidbody>();
-            
-            Body2.Dampning = 1.0;
-
-            //Vector3d sminCloth = new Vector3d(fxMinCloth.x, fxMinCloth.y, fxMinCloth.z);
-            //Vector3d smaxCloth = new Vector3d(fxMaxCloth.x, fxMaxCloth.y, fxMaxCloth.z);
-            Vector3d sminCloth = new Vector3d(translation.x - (numParticlesX * diameter) / 2, -(float)diameter, translation.z - (diameter / 2));
-            Vector3d smaxCloth = new Vector3d(translation.x + (numParticlesX * diameter) / 2, (float)diameter, translation.z + (diameter / 2));
-            StaticBounds2 = new Box3d(sminCloth, smaxCloth);
-            Body2.MarkAsStatic(StaticBounds2);
+            // Solver
+            // -------
 
             // Create Solver
             Solver = new Solver3d();
 
             // Add particle-based bodies
-            Solver.AddBody(Body2);
+            Solver.AddBody(Body);
 
             // Add external Unity bodies
-            Solver.AddExternalBody(ExtRigidBody2);
+            ExtRigidBody = obstacle.GetComponent<Rigidbody>();
+            Solver.AddExternalBody(ExtRigidBody);
 
             // Add external forces
             Solver.AddForce(new GravitationalForce3d());
 
+            // Collisions
             // -------
 
             // Add collisions with ground
             //Collision3d ground = new PlanarCollision3d(Vector3d.UnitY, (float)diameter); // DEFAULT 0 - changed to counteract the scaling factor // NEED TO BE THE DIAMETER TO MAKE ONE SPHERE IN UNDERGROUND
-            //Solver.AddCollision(ground);
-
-            // TEST
+            //Solver.AddCollision(ground);            
             Collision3d realGround = new PlanarCollision3d(Vector3d.UnitY, terrain.transform.position.y);
             Solver.AddCollision(realGround);
             
-            CollisionExternal3d bodyWithExt4 = new BodyCollisionExternal3d(Body2, ExtRigidBody2);
-            Solver.AddExternalCollision(bodyWithExt4);
+            // Add collisions with external bodies
+            CollisionExternal3d bodyWithExternal = new BodyCollisionExternal3d(Body, ExtRigidBody);
+            Solver.AddExternalCollision(bodyWithExternal);
 
+            // Iterations
             // -------
 
             Solver.SolverIterations = solverIterations;
@@ -163,9 +132,8 @@ namespace PositionBasedDynamics
             // Create Spheres
             if (drawSpheres)
             {
-                CreateSpheres2();
+                CreateSpheres();
             }
-
         }
 
         private void FixedUpdate()
@@ -182,16 +150,16 @@ namespace PositionBasedDynamics
             // Update Spheres
             if (drawSpheres)
             {
-                UpdateSpheres2();
+                UpdateSpheres();
             }
         }
 
         private void OnDestroy()
         {
-            if (Spheres2 != null)
+            if (Spheres != null)
             {
-                for (int i = 0; i < Spheres2.Count; i++)
-                    DestroyImmediate(Spheres2[i]);
+                for (int i = 0; i < Spheres.Count; i++)
+                    DestroyImmediate(Spheres[i]);
             }
         }
 
@@ -201,48 +169,53 @@ namespace PositionBasedDynamics
             {
                 Camera camera = Camera.current;
 
+                // Grid
                 Vector3 min = new Vector3(-GRID_SIZE, 0, -GRID_SIZE);
                 Vector3 max = new Vector3(GRID_SIZE, 0, GRID_SIZE);
-
                 DrawLines.DrawGrid(camera, Color.white, min, max, 1, transform.localToWorldMatrix);
                 
+                // Vertices
                 Matrix4x4d m = MathConverter.ToMatrix4x4d(transform.localToWorldMatrix);
-                DrawLines.DrawVertices(LINE_MODE.TRIANGLES, camera, Color.red, Body2.Positions, Body2.Indices, m);
+                DrawLines.DrawVertices(LINE_MODE.TRIANGLES, camera, Color.red, Body.Positions, Body.Indices, m);
 
-                DrawLines.DrawBounds(camera, Color.green, StaticBounds2, Matrix4x4d.Identity);
+                // Static Bounds
+                Vector3d sminCloth = new Vector3d(translation.x - (plantSize.x * diameter) / 2, -(float)diameter, translation.z - (diameter / 2));
+                Vector3d smaxCloth = new Vector3d(translation.x + (plantSize.x * diameter) / 2, (float)diameter, translation.z + (diameter / 2));
+                StaticBounds = new Box3d(sminCloth, smaxCloth);   
+                DrawLines.DrawBounds(camera, Color.green, StaticBounds, Matrix4x4d.Identity);
 
             }
 
             if (drawMesh)
             {
-                Vector3[] vertices = new Vector3[Body2.Positions.Length * 2]; // 24
-                Vector3[] normals = new Vector3[(Body2.Indices.Length / 3) * 2]; // 24
+                Vector3[] vertices = new Vector3[Body.Positions.Length * 2]; // 24
+                Vector3[] normals = new Vector3[(Body.Indices.Length / 3) * 2]; // 24
 
                 GetComponent<MeshFilter>().mesh = mesh = new Mesh();
                 mesh.name = "TextureMesh";
 
-                for (int i = 0; i < Body2.Positions.Length; i++) // From 0 to 12
+                for (int i = 0; i < Body.Positions.Length; i++) // From 0 to 12
                 {
-                    vertices[i] = Body2.Positions[i].ToVector3();
+                    vertices[i] = Body.Positions[i].ToVector3();
                 }
 
-                for (int i = Body2.Positions.Length; i < Body2.Positions.Length * 2; i++) // From 12 to 24 // TEST
+                for (int i = Body.Positions.Length; i < Body.Positions.Length * 2; i++) // From 12 to 24 // TEST
                 {
-                    vertices[i] = Body2.Positions[i - Body2.Positions.Length].ToVector3();
+                    vertices[i] = Body.Positions[i - Body.Positions.Length].ToVector3();
                 }
 
                 mesh.vertices = vertices;
 
-                int[] triangles = new int[Body2.Indices.Length * 2]; // 72
+                int[] triangles = new int[Body.Indices.Length * 2]; // 72
 
-                for (int i = 0; i < Body2.Indices.Length; i++) // From 0 to 36
+                for (int i = 0; i < Body.Indices.Length; i++) // From 0 to 36
                 {
-                    triangles[i] = Body2.Indices[i];
+                    triangles[i] = Body.Indices[i];
                 }
 
-                for (int i = Body2.Indices.Length; i < Body2.Indices.Length * 2; i++) // From 36 to 72 // ERROR - FLIP NORMAL
+                for (int i = Body.Indices.Length; i < Body.Indices.Length * 2; i++) // From 36 to 72 // ERROR - FLIP NORMAL
                 {
-                    triangles[i] = Body2.Indices[i - Body2.Indices.Length];
+                    triangles[i] = Body.Indices[i - Body.Indices.Length];
                 }
 
                 mesh.triangles = triangles;
@@ -260,18 +233,18 @@ namespace PositionBasedDynamics
             }
         }
 
-        private void CreateSpheres2()
+        private void CreateSpheres()
         {
             if (sphereMaterial == null) return;
 
-            Spheres2 = new List<GameObject>();
+            Spheres = new List<GameObject>();
 
-            int numParticles = Body2.NumParticles;
-            float diam = (float)Body2.ParticleRadius * 2.0f * scaleRadius;
+            int numParticles = Body.NumParticles;
+            float diam = (float)Body.ParticleRadius * 2.0f * scaleRadius;
 
             for (int i = 0; i < numParticles; i++)
             {
-                Vector3 pos = MathConverter.ToVector3(Body2.Positions[i]);
+                Vector3 pos = MathConverter.ToVector3(Body.Positions[i]);
 
                 GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 sphere.name = i.ToString(); // TEST
@@ -284,25 +257,25 @@ namespace PositionBasedDynamics
 
                 sphere.GetComponent<MeshRenderer>().material = sphereMaterialNoContact;
 
-                Spheres2.Add(sphere);
+                Spheres.Add(sphere);
             }
         }
 
-        public void UpdateSpheres2()
+        public void UpdateSpheres()
         {
-            if (Spheres2 != null)
+            if (Spheres != null)
             {
-                for (int i = 0; i < Spheres2.Count; i++)
+                for (int i = 0; i < Spheres.Count; i++)
                 {
-                    Vector3d pos = Body2.Positions[i];
-                    Spheres2[i].transform.position = new Vector3((float)pos.x, (float)pos.y, (float)pos.z);
+                    Vector3d pos = Body.Positions[i];
+                    Spheres[i].transform.position = new Vector3((float)pos.x, (float)pos.y, (float)pos.z);
 
-                    if (Body2.IsContact[i] && !Body2.IsBroken[i])
-                        Spheres2[i].GetComponent<MeshRenderer>().material = sphereMaterialContact;
-                    else if (!Body2.IsContact[i] && !Body2.IsBroken[i])
-                        Spheres2[i].GetComponent<MeshRenderer>().material = sphereMaterialNoContact;
-                    else if (Body2.IsBroken[i])
-                        Spheres2[i].GetComponent<MeshRenderer>().material = sphereMaterialBroken;
+                    if (Body.IsContact[i] && !Body.IsBroken[i])
+                        Spheres[i].GetComponent<MeshRenderer>().material = sphereMaterialContact;
+                    else if (!Body.IsContact[i] && !Body.IsBroken[i])
+                        Spheres[i].GetComponent<MeshRenderer>().material = sphereMaterialNoContact;
+                    else if (Body.IsBroken[i])
+                        Spheres[i].GetComponent<MeshRenderer>().material = sphereMaterialBroken;
                 }
             }
         }
@@ -313,47 +286,47 @@ namespace PositionBasedDynamics
                 Debug.Log("[BasicPBDDemo] Collision Detected with object: " + hit.gameObject.name + " with particle/sphere: " + children.name);
 
             if (printInformation)
-                Debug.Log("CHANGING SPHERE: " + int.Parse(children.name) + " with the value " + Spheres2[int.Parse(children.name)].GetComponent<DetectCollision>().Hit.GetContact(0).point);
+                Debug.Log("CHANGING SPHERE: " + int.Parse(children.name) + " with the value " + Spheres[int.Parse(children.name)].GetComponent<DetectCollision>().Hit.GetContact(0).point);
 
-            Body2.ExternalHit[int.Parse(children.name)] = hit.GetContact(0);
-            Body2.IsContact[int.Parse(children.name)] = true;
+            Body.ExternalHit[int.Parse(children.name)] = hit.GetContact(0);
+            Body.IsContact[int.Parse(children.name)] = true;
 
             if (printInformation)
             {
                 Debug.Log("==================");
-                for (int x = 0; x < Body2.NumParticles; x++)
+                for (int x = 0; x < Body.NumParticles; x++)
                 {
-                    if (Body2.IsContact[x])
-                        Debug.Log("[INFO] Sphere: " + x + " is in contact: " + Body2.IsContact[x] + " - Body2.ExternalHit[x]: " + Body2.ExternalHit[x].point);
+                    if (Body.IsContact[x])
+                        Debug.Log("[INFO] Sphere: " + x + " is in contact: " + Body.IsContact[x] + " - Body2.ExternalHit[x]: " + Body.ExternalHit[x].point);
                     else
-                        Debug.Log("[INFO] Sphere: " + x + " NOT in contact: " + Body2.IsContact[x] + " - Body2.ExternalHit[x]: " + Body2.ExternalHit[x].point);
+                        Debug.Log("[INFO] Sphere: " + x + " NOT in contact: " + Body.IsContact[x] + " - Body2.ExternalHit[x]: " + Body.ExternalHit[x].point);
                 }
                 Debug.Log("==================");
 
                 // It draws multiple rays
-                Debug.DrawRay(Body2.ExternalHit[int.Parse(children.name)].point, Body2.ExternalHit[int.Parse(children.name)].normal, Color.blue, 0.1f);
+                Debug.DrawRay(Body.ExternalHit[int.Parse(children.name)].point, Body.ExternalHit[int.Parse(children.name)].normal, Color.blue, 0.1f);
             }
         }
 
         public void ExitCollisionFromChildBody2(GameObject children)
         {
-            Body2.ExternalHit[int.Parse(children.name)] = new ContactPoint();
-            Body2.IsContact[int.Parse(children.name)] = false;
+            Body.ExternalHit[int.Parse(children.name)] = new ContactPoint();
+            Body.IsContact[int.Parse(children.name)] = false;
 
             if (printInformation)
             {
                 Debug.Log("==================");
-                for (int x = 0; x < Body2.NumParticles; x++)
+                for (int x = 0; x < Body.NumParticles; x++)
                 {
-                    if (Body2.IsContact[x])
-                        Debug.Log("[INFO] Sphere: " + x + " is in contact: " + Body2.IsContact[x] + " - Body2.ExternalHit[x]: " + Body2.ExternalHit[x].point);
+                    if (Body.IsContact[x])
+                        Debug.Log("[INFO] Sphere: " + x + " is in contact: " + Body.IsContact[x] + " - Body2.ExternalHit[x]: " + Body.ExternalHit[x].point);
                     else
-                        Debug.Log("[INFO] Sphere: " + x + " NOT in contact: " + Body2.IsContact[x] + " - Body2.ExternalHit[x]: " + Body2.ExternalHit[x].point);
+                        Debug.Log("[INFO] Sphere: " + x + " NOT in contact: " + Body.IsContact[x] + " - Body2.ExternalHit[x]: " + Body.ExternalHit[x].point);
                 }
                 Debug.Log("==================");
 
                 // It draws multiple rays
-                Debug.DrawRay(Body2.ExternalHit[int.Parse(children.name)].point, Body2.ExternalHit[int.Parse(children.name)].normal, Color.blue, 0.1f);
+                Debug.DrawRay(Body.ExternalHit[int.Parse(children.name)].point, Body.ExternalHit[int.Parse(children.name)].normal, Color.blue, 0.1f);
             }
         }
     } 
