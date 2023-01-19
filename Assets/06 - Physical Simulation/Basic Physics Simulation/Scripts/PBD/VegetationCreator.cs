@@ -43,6 +43,7 @@ namespace PositionBasedDynamics
         public Vector2 plantSize;
         public double mass = 1.0;
         public double diameter = 0.5;
+        public double space = 0;
         [Range(0f, 1f)] public float scaleRadius;
 
         [Header("Body - Stiffness")]
@@ -90,7 +91,7 @@ namespace PositionBasedDynamics
         void Start()
         {
             // TODO: List of plants?
-            PlantType = new Plant(plantSize, mass, diameter, scaleRadius, stretchStiffness, bendStiffness);
+            PlantType = new Plant(plantSize, mass, diameter, space, scaleRadius, stretchStiffness, bendStiffness);
             Body = PlantType.CreatePlant(translation, rotation);
 
             // Solver
@@ -179,8 +180,8 @@ namespace PositionBasedDynamics
                 DrawLines.DrawVertices(LINE_MODE.TRIANGLES, camera, Color.red, Body.Positions, Body.Indices, m);
 
                 // Static Bounds
-                Vector3d sminCloth = new Vector3d(translation.x - (plantSize.x * diameter) / 2, -(float)diameter, translation.z - (diameter / 2));
-                Vector3d smaxCloth = new Vector3d(translation.x + (plantSize.x * diameter) / 2, (float)diameter, translation.z + (diameter / 2));
+                Vector3d sminCloth = new Vector3d(translation.x - (plantSize.x / 2) - (diameter / 2), -(float)diameter, translation.z - (diameter / 2));
+                Vector3d smaxCloth = new Vector3d(translation.x + (plantSize.x / 2) + (diameter / 2), (float)space, translation.z + (diameter / 2));
                 StaticBounds = new Box3d(sminCloth, smaxCloth);   
                 DrawLines.DrawBounds(camera, Color.green, StaticBounds, Matrix4x4d.Identity);
 

@@ -1101,11 +1101,12 @@ MonoBehaviour:
   terrain: {fileID: 1552536866}
   GRID_SIZE: 2
   cloth: {fileID: 1408628998}
-  translation: {x: 2, y: 1, z: 0}
+  translation: {x: 2, y: 4, z: 0}
   rotation: {x: 90, y: 0, z: 0}
-  plantSize: {x: 2, y: 6}
+  plantSize: {x: 1, y: 1}
   mass: 0.2
-  diameter: 0.02
+  diameter: 0.1
+  space: 0.2
   scaleRadius: 1
   stretchStiffness: 0.9
   bendStiffness: 2
