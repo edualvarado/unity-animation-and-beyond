@@ -113,12 +113,12 @@ namespace PositionBasedDynamics.Constraints
                 //    Body.Constraints.Remove(this);
                 //}
 
-                if ((180f - CurrentAngleAlt) > ThresholdAngle)
-                {
-                    Debug.Log("REMOVE Between: " + i0 + ", " + i1 + " and " + i2);
-                    Body.IsBroken[i1] = true;
-                    Body.Constraints.Remove(this);
-                }
+                //if ((180f - CurrentAngleAlt) > ThresholdAngle)
+                //{
+                //    Debug.Log("REMOVE Between: " + i0 + ", " + i1 + " and " + i2);
+                //    Body.IsBroken[i1] = true;
+                //    Body.Constraints.Remove(this);
+                //}
             }
 
             // For testing: Check only first row

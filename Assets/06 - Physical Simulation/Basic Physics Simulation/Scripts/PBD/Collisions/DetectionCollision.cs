@@ -7,6 +7,7 @@ namespace PositionBasedDynamics.Collisions
     public class DetectionCollision : MonoBehaviour
     {
         public Collision Hit { get; set; }
+        public float PenetrationDistance { get; set; }
 
         private GameObject root;
 
@@ -14,38 +15,44 @@ namespace PositionBasedDynamics.Collisions
         {
             root = GameObject.Find("Root");
         }
-
-        private void OnCollisionEnter(Collision collision)
+        
+        private void OnCollisionEnter(Collision other)
         {
+            // Bring to parent script
+            VegetationCreator parentScript = root.GetComponent<VegetationCreator>();
+            
             // Save collision
-            Hit = collision;
+            Hit = other;
+            
+            // To estimate penetration distance
+            ContactPoint[] contactPoints = Hit.contacts;
+            Vector3 center = GetComponent<Collider>().bounds.center;
 
-            //Debug.Log("[DetectCollision] Sphere: " + int.Parse(gameObject.name) + ": Hit " + Hit.GetContact(0).point);
+            ContactPoint contactPoint = contactPoints[0];
+            Vector3 normal = contactPoint.normal;
 
-            // Forward to the parent and let know a collision happened
+            RaycastHit hitInfo;
+            if (Physics.Raycast(center, -normal, out hitInfo))
+            {
+                PenetrationDistance = Mathf.Abs((float)parentScript.diameter / 2 - hitInfo.distance);
+            }
 
-            //BasicPBDDemo parentScript = transform.parent.GetComponent<BasicPBDDemo>();
-            VegetationCreator parentScript = root.GetComponent<VegetationCreator>(); // BasicPBDDemo before VegetationCreator
-
-            if (transform.parent.gameObject.name == "Cloth")
-                parentScript.CollisionFromChildBody2(Hit, this.gameObject);
-
+            Debug.DrawRay(center, -normal * hitInfo.distance, Color.blue);
+            
+            // Send information
+            parentScript.CollisionFromChildBody(Hit, PenetrationDistance, this.gameObject);
         }
 
-        private void OnCollisionExit(Collision collision)
+        private void OnCollisionExit(Collision other)
         {
-            // Save collision
-            //Hit = collision;
-
-            //Debug.Log("[DetectCollision] Sphere: " + int.Parse(gameObject.name) + ": Hit " + Hit.GetContact(0).point);
-
-            // Forward to the parent and let know a collision happened
-            //BasicPBDDemo parentScript = transform.parent.GetComponent<BasicPBDDemo>();
+            // Bring to parent script
             VegetationCreator parentScript = root.GetComponent<VegetationCreator>();
 
-
-            if (transform.parent.gameObject.name == "Cloth")
-                parentScript.ExitCollisionFromChildBody2(this.gameObject);
+            // Send information
+            parentScript.ExitCollisionFromChildBody(this.gameObject);
+            
+            //if (transform.parent.gameObject.name == "BodyPlant_0")
+            //    parentScript.ExitCollisionFromChildBody(this.gameObject);
 
         }
     }

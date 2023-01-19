@@ -19,19 +19,18 @@ namespace PositionBasedDynamics
     public class Plant
     {
         #region Instance Fields
-
-        [Header("Plant - Position and Orientation")]
+        
+        // Position and Orientation
         public Vector3 translation;
         public Vector3 rotation;
 
-        [Header("Plant - Properties")]
+        // Plant properties
         public Vector2 plantSize;
         public double mass = 1.0;
         public double diameter = 0.5;
-        public double space = 0;
-        [Range(0f, 1f)] public float scaleRadius;
+        public double spaceBetween = 0;
 
-        [Header("Body - Stiffness")]
+        // Stiffness
         public double stretchStiffness = 0.25;
         public double bendStiffness = 0.5;
 
@@ -40,7 +39,7 @@ namespace PositionBasedDynamics
         #region Instance Properties
 
         private ClothBody3d Body { get; set; }
-        private Box3d StaticBounds2 { get; set; }
+        private Box3d StaticBounds { get; set; }
 
         #endregion
 
@@ -50,13 +49,12 @@ namespace PositionBasedDynamics
 
         #region Methods
 
-        public Plant(Vector2 plantSize, double mass, double diameter, double space, float scaleRadius, double stretchStiffness, double bendStiffness)
+        public Plant(Vector2 plantSize, double mass, double diameter, double spaceBetween, double stretchStiffness, double bendStiffness)
         {
             this.plantSize = plantSize;
             this.mass = mass;
             this.diameter = diameter;
-            this.space = space;
-            this.scaleRadius = scaleRadius;
+            this.spaceBetween = spaceBetween;
             this.stretchStiffness = stretchStiffness;
             this.bendStiffness = bendStiffness;
         }
@@ -64,9 +62,8 @@ namespace PositionBasedDynamics
         public ClothBody3d CreatePlant(Vector3 translation, Vector3 rotation)
         {
             // Always translate upwards s.t. we leave a virtual row underground
-            //double height = ((plantSize.y * diameter) / 2) - diameter;
-            double height = (plantSize.y / 2) - diameter / 2;
-
+            //double height = (plantSize.y / 2) - diameter / 2; 
+            double height = (plantSize.y / 2) - spaceBetween + diameter / 2;
 
             // Global pos and rotation of mesh
             Matrix4x4d TCloth = Matrix4x4d.Translate(new Vector3d(translation.x, height, translation.z)); // should be height
@@ -74,24 +71,23 @@ namespace PositionBasedDynamics
             Matrix4x4d TRCloth = TCloth * RCloth;
 
             // Create cloth body
-            //double width = (plantSize.x - 1) * diameter;
-            //double depth = (plantSize.y - 1) * diameter;
             double width = plantSize.x;
             double depth = plantSize.y;
 
-            //TrianglesFromGrid source2 = new TrianglesFromGrid(diameter / 2, width, depth);
-            TrianglesFromGrid source2 = new TrianglesFromGrid(space / 2, width, depth);
+            // Create mesh given space in between and size
+            TrianglesFromGrid sourceMesh = new TrianglesFromGrid(spaceBetween / 2, width, depth);
 
-            Body = new ClothBody3d(source2, diameter / 2, mass, stretchStiffness, bendStiffness, TRCloth);
-            
+            // Build plant body given the specs
+            Body = new ClothBody3d(sourceMesh, diameter / 2, mass, stretchStiffness, bendStiffness, TRCloth);
+         
+            // TEST TODO
             Body.Dampning = 1.0;
 
-            Vector3d sminCloth = new Vector3d(translation.x - (plantSize.x / 2) - (diameter / 2), -(float)diameter, translation.z - (diameter / 2));
-            Vector3d smaxCloth = new Vector3d(translation.x + (plantSize.x / 2) + (diameter / 2), (float)space, translation.z + (diameter / 2));
-            //Vector3d sminCloth = new Vector3d(translation.x - (plantSize.x * diameter) / 2, -(float)diameter, translation.z - (diameter / 2));
-            //Vector3d smaxCloth = new Vector3d(translation.x + (plantSize.x * diameter) / 2, (float)diameter, translation.z + (diameter / 2));
-            StaticBounds2 = new Box3d(sminCloth, smaxCloth);
-            Body.MarkAsStatic(StaticBounds2);
+            // Volume fixed
+            Vector3d sminCloth = new Vector3d(translation.x - (plantSize.x / 2) - (diameter / 2), -(float)spaceBetween, translation.z - (diameter / 2));
+            Vector3d smaxCloth = new Vector3d(translation.x + (plantSize.x / 2) + (diameter / 2), (float)diameter, translation.z + (diameter / 2));
+            StaticBounds = new Box3d(sminCloth, smaxCloth);
+            Body.MarkAsStatic(StaticBounds);
 
             return Body;
         }

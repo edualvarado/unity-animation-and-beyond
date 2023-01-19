@@ -19,32 +19,34 @@ namespace PositionBasedDynamics
     public class VegetationCreator : MonoBehaviour
     {
         #region Instance Fields
-        
+
         // Debug
         [Header("Debug")]
         public bool printInformation;
 
         // External Obstacles
         [Header("External")]
+        public bool applyGravity;
         public GameObject obstacle;
+        public GameObject obstacle2;
         public GameObject terrain;
 
-        // Reference Grid (White)
-        [Header("Grid")]
-        public int GRID_SIZE = 2;
+        [Header("List")]
+        public List<List<GameObject>> ListOfLists = new List<List<GameObject>>();
 
         // Global pos and rotation of cloth
         [Header("Body - Global position and orientation")]
-        public GameObject cloth; // TODO For each body
+        //public GameObject bodyPlant; // TODO For each body
         public Vector3 translation;
         public Vector3 rotation;
 
         [Header("Body Type - Properties")]
+        public int numberOfPlants = 2;
+        public List<ClothBody3d> plants = new List<ClothBody3d>();
         public Vector2 plantSize;
         public double mass = 1.0;
         public double diameter = 0.5;
-        public double space = 0;
-        [Range(0f, 1f)] public float scaleRadius;
+        public double spaceBetween = 0;
 
         [Header("Body - Stiffness")]
         public double stretchStiffness = 0.25;
@@ -63,7 +65,7 @@ namespace PositionBasedDynamics
         public Material sphereMaterialBroken;
 
         [Header("PBD Solver")]
-        public int iterations = 1; // 4 before
+        public int iterations = 2; // 4 before
         public int solverIterations = 1; // 2 before
         public int collisionIterations = 1; // 2 before
 
@@ -75,6 +77,8 @@ namespace PositionBasedDynamics
         private Plant PlantType { get; set; }
         private ClothBody3d Body { get; set; }
         private Rigidbody ExtRigidBody { get; set; }
+        private Rigidbody ExtRigidBody2 { get; set; }
+
         private Solver3d Solver { get; set; }
         private Box3d StaticBounds { get; set; }
 
@@ -84,44 +88,52 @@ namespace PositionBasedDynamics
 
         //private double timeStep = 1.0 / 60.0; 
         private double timeStep;
+  
+        private int GRID_SIZE = 2;
         
         #endregion
 
         // Start is called before the first frame update
         void Start()
         {
-            // TODO: List of plants?
-            PlantType = new Plant(plantSize, mass, diameter, space, scaleRadius, stretchStiffness, bendStiffness);
-            Body = PlantType.CreatePlant(translation, rotation);
-
-            // Solver
-            // -------
-
             // Create Solver
             Solver = new Solver3d();
+            
+            // List of plants
+            for (int i = 0; i < numberOfPlants; i++)
+            {
+                PlantType = new Plant(plantSize, mass, diameter, spaceBetween, stretchStiffness, bendStiffness);
+                Body = PlantType.CreatePlant(new Vector3(translation.x + i, translation.y, translation.z), new Vector3(rotation.x, rotation.y, rotation.z));
+                plants.Add(Body);
 
-            // Add particle-based bodies
-            Solver.AddBody(Body);
+                // Add particle-based bodies
+                Solver.AddBody(Body);
+            }
 
             // Add external Unity bodies
             ExtRigidBody = obstacle.GetComponent<Rigidbody>();
             Solver.AddExternalBody(ExtRigidBody);
 
+            ExtRigidBody2 = obstacle2.GetComponent<Rigidbody>();
+            Solver.AddExternalBody(ExtRigidBody2);
+            
             // Add external forces
-            Solver.AddForce(new GravitationalForce3d());
+            if (applyGravity)
+                Solver.AddForce(new GravitationalForce3d());
 
             // Collisions
             // -------
 
             // Add collisions with ground
-            //Collision3d ground = new PlanarCollision3d(Vector3d.UnitY, (float)diameter); // DEFAULT 0 - changed to counteract the scaling factor // NEED TO BE THE DIAMETER TO MAKE ONE SPHERE IN UNDERGROUND
-            //Solver.AddCollision(ground);            
             Collision3d realGround = new PlanarCollision3d(Vector3d.UnitY, terrain.transform.position.y);
             Solver.AddCollision(realGround);
             
-            // Add collisions with external bodies
+            // Add collisions with external bodies // TODO for all bodies
             CollisionExternal3d bodyWithExternal = new BodyCollisionExternal3d(Body, ExtRigidBody);
             Solver.AddExternalCollision(bodyWithExternal);
+
+            CollisionExternal3d bodyWithExternal2 = new BodyCollisionExternal3d(Body, ExtRigidBody2);
+            Solver.AddExternalCollision(bodyWithExternal2);
 
             // Iterations
             // -------
@@ -180,11 +192,10 @@ namespace PositionBasedDynamics
                 DrawLines.DrawVertices(LINE_MODE.TRIANGLES, camera, Color.red, Body.Positions, Body.Indices, m);
 
                 // Static Bounds
-                Vector3d sminCloth = new Vector3d(translation.x - (plantSize.x / 2) - (diameter / 2), -(float)diameter, translation.z - (diameter / 2));
-                Vector3d smaxCloth = new Vector3d(translation.x + (plantSize.x / 2) + (diameter / 2), (float)space, translation.z + (diameter / 2));
+                Vector3d sminCloth = new Vector3d(translation.x - (plantSize.x / 2) - (diameter / 2), -(float)spaceBetween, translation.z - (diameter / 2));
+                Vector3d smaxCloth = new Vector3d(translation.x + (plantSize.x / 2) + (diameter / 2), (float)diameter, translation.z + (diameter / 2));
                 StaticBounds = new Box3d(sminCloth, smaxCloth);   
                 DrawLines.DrawBounds(camera, Color.green, StaticBounds, Matrix4x4d.Identity);
-
             }
 
             if (drawMesh)
@@ -240,25 +251,29 @@ namespace PositionBasedDynamics
 
             Spheres = new List<GameObject>();
 
-            int numParticles = Body.NumParticles;
-            float diam = (float)Body.ParticleRadius * 2.0f * scaleRadius;
-
-            for (int i = 0; i < numParticles; i++)
+            for (int j = 0; j < numberOfPlants; j++)
             {
-                Vector3 pos = MathConverter.ToVector3(Body.Positions[i]);
+                int numParticles = Body.NumParticles;
+                float diam = (float)Body.ParticleRadius * 2.0f;
+                GameObject bodyPlant = new GameObject("BodyPlant_" + j);
 
-                GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                sphere.name = i.ToString(); // TEST
-                sphere.transform.parent = cloth.transform;
-                sphere.transform.position = pos;
-                sphere.transform.localScale = new Vector3(diam, diam, diam);
-                sphere.GetComponent<Collider>().enabled = true;
-                sphere.GetComponent<MeshRenderer>().material = sphereMaterial;
-                sphere.AddComponent<DetectionCollision>();
+                for (int i = 0; i < numParticles; i++)
+                {
+                    Vector3 pos = MathConverter.ToVector3(Body.Positions[i]);
 
-                sphere.GetComponent<MeshRenderer>().material = sphereMaterialNoContact;
+                    GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                    sphere.name = i.ToString();
+                    sphere.transform.parent = bodyPlant.transform;
+                    sphere.transform.position = pos;
+                    sphere.transform.localScale = new Vector3(diam, diam, diam);
+                    sphere.GetComponent<Collider>().enabled = true;
+                    sphere.GetComponent<MeshRenderer>().material = sphereMaterial;
+                    sphere.AddComponent<DetectionCollision>();
 
-                Spheres.Add(sphere);
+                    sphere.GetComponent<MeshRenderer>().material = sphereMaterialNoContact;
+
+                    Spheres.Add(sphere);
+                } 
             }
         }
 
@@ -266,30 +281,34 @@ namespace PositionBasedDynamics
         {
             if (Spheres != null)
             {
-                for (int i = 0; i < Spheres.Count; i++)
+                for (int j = 0; j < numberOfPlants; j++)
                 {
-                    Vector3d pos = Body.Positions[i];
-                    Spheres[i].transform.position = new Vector3((float)pos.x, (float)pos.y, (float)pos.z);
+                    for (int i = 0; i < Spheres.Count; i++)
+                    {
+                        Vector3d pos = Body.Positions[i];
+                        Spheres[i].transform.position = new Vector3((float)pos.x, (float)pos.y, (float)pos.z);
 
-                    if (Body.IsContact[i] && !Body.IsBroken[i])
-                        Spheres[i].GetComponent<MeshRenderer>().material = sphereMaterialContact;
-                    else if (!Body.IsContact[i] && !Body.IsBroken[i])
-                        Spheres[i].GetComponent<MeshRenderer>().material = sphereMaterialNoContact;
-                    else if (Body.IsBroken[i])
-                        Spheres[i].GetComponent<MeshRenderer>().material = sphereMaterialBroken;
+                        if (Body.IsContact[i] && !Body.IsBroken[i])
+                            Spheres[i].GetComponent<MeshRenderer>().material = sphereMaterialContact;
+                        else if (!Body.IsContact[i] && !Body.IsBroken[i])
+                            Spheres[i].GetComponent<MeshRenderer>().material = sphereMaterialNoContact;
+                        else if (Body.IsBroken[i])
+                            Spheres[i].GetComponent<MeshRenderer>().material = sphereMaterialBroken;
+                    } 
                 }
             }
         }
 
-        public void CollisionFromChildBody2(Collision hit, GameObject children)
+        public void CollisionFromChildBody(Collision hit, float penetrationDistance, GameObject children)
         {
             if (printInformation)
+            {
                 Debug.Log("[BasicPBDDemo] Collision Detected with object: " + hit.gameObject.name + " with particle/sphere: " + children.name);
-
-            if (printInformation)
                 Debug.Log("CHANGING SPHERE: " + int.Parse(children.name) + " with the value " + Spheres[int.Parse(children.name)].GetComponent<DetectCollision>().Hit.GetContact(0).point);
+            }
 
             Body.ExternalHit[int.Parse(children.name)] = hit.GetContact(0);
+            Body.PenetrationDistance[int.Parse(children.name)] = penetrationDistance;
             Body.IsContact[int.Parse(children.name)] = true;
 
             if (printInformation)
@@ -309,9 +328,10 @@ namespace PositionBasedDynamics
             }
         }
 
-        public void ExitCollisionFromChildBody2(GameObject children)
+        public void ExitCollisionFromChildBody(GameObject children)
         {
             Body.ExternalHit[int.Parse(children.name)] = new ContactPoint();
+            Body.PenetrationDistance[int.Parse(children.name)] = 0f;
             Body.IsContact[int.Parse(children.name)] = false;
 
             if (printInformation)
