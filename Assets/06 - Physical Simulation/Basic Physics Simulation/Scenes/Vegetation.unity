@@ -311,7 +311,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!145 &547871030
 SpringJoint:
   m_ObjectHideFlags: 0
@@ -323,7 +323,7 @@ SpringJoint:
   m_ConnectedArticulationBody: {fileID: 0}
   m_Anchor: {x: 0, y: 0.49999997, z: 0}
   m_AutoConfigureConnectedAnchor: 1
-  m_ConnectedAnchor: {x: 0, y: 0, z: 0}
+  m_ConnectedAnchor: {x: 0, y: -9.36384, z: 0}
   serializedVersion: 2
   m_Spring: 10
   m_Damper: 0.2
@@ -521,7 +521,7 @@ SphereCollider:
   m_GameObject: {fileID: 1254025400}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
@@ -583,7 +583,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1254025400}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2, y: 0.76, z: -3.31}
+  m_LocalPosition: {x: 2.987, y: 0.76, z: -3.31}
   m_LocalScale: {x: 1.15352, y: 1.15352, z: 1.15352}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -647,6 +647,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1442529791}
   - component: {fileID: 1442529790}
+  - component: {fileID: 1442529792}
   m_Layer: 0
   m_Name: Directional Light
   m_TagString: Untagged
@@ -731,6 +732,26 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+--- !u!114 &1442529792
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1442529789}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Version: 1
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_LightLayerMask: 1
+  m_CustomShadowLayers: 0
+  m_ShadowLayerMask: 1
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
 --- !u!1 &1544152160
 GameObject:
   m_ObjectHideFlags: 0
@@ -814,7 +835,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 9d9336ace7cc0b14daa8d662f6ee8c16, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -852,7 +873,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1546129172}
   m_LocalRotation: {x: 0.17742766, y: -0.6844848, z: -0.17742766, w: 0.6844848}
-  m_LocalPosition: {x: 2, y: -0.25, z: -3.5}
+  m_LocalPosition: {x: 2.9869998, y: -0.25, z: -3.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1082,7 +1103,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!65 &1821657238
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1315,7 +1336,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 61e3b86ec85bd0140bf4f842f5d75aef, type: 2}
+  - {fileID: 2100000, guid: 9a532d18907c1b749b9f6525bc683c73, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1349,24 +1370,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c5b4ab987eda034099f024120aa175a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  activateRandomization: 0
+  limitsTerrain: {x: 5, y: 5}
   printInformation: 0
   applyGravity: 1
   obstacle: {fileID: 1254025400}
   obstacle2: {fileID: 547871029}
   terrain: {fileID: 1552536866}
-  translation: {x: 2, y: 4, z: 0}
+  translation: {x: 3, y: 0, z: 0}
   rotation: {x: 90, y: 0, z: 0}
   numberOfPlants: 1
-  plantSize: {x: 0.5, y: 0.8}
+  plantSize: {x: 0.2, y: 0.3}
   mass: 0.2
-  diameter: 0.1
-  spaceBetween: 0.2
+  diameter: 0.05
+  spaceBetween: 0.1
   stretchStiffness: 1
-  bendStiffness: 5
+  bendStiffness: 1
   drawLines: 1
   drawMesh: 1
   drawSpheres: 1
-  mesh: {fileID: 0}
+  makeSpheresVisible: 1
+  mesh: []
+  grass: {fileID: 2100000, guid: 9a532d18907c1b749b9f6525bc683c73, type: 2}
   sphereMaterial: {fileID: 2100000, guid: 61e3b86ec85bd0140bf4f842f5d75aef, type: 2}
   sphereMaterialNoContact: {fileID: 2100000, guid: 2018d320d3499f945a7110a2f4b50da5, type: 2}
   sphereMaterialContact: {fileID: 2100000, guid: 2161495511b7bf04fb31b88bceed4846, type: 2}

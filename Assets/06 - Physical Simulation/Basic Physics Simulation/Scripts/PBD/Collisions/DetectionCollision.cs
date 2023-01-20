@@ -38,9 +38,9 @@ namespace PositionBasedDynamics.Collisions
             }
 
             Debug.DrawRay(center, -normal * hitInfo.distance, Color.blue);
-            
+
             // Send information
-            parentScript.CollisionFromChildBody(Hit, PenetrationDistance, this.gameObject);
+            parentScript.CollisionFromChildBody(Hit, PenetrationDistance, this.gameObject, this.transform.parent.gameObject);
         }
 
         private void OnCollisionExit(Collision other)
@@ -49,7 +49,7 @@ namespace PositionBasedDynamics.Collisions
             VegetationCreator parentScript = root.GetComponent<VegetationCreator>();
 
             // Send information
-            parentScript.ExitCollisionFromChildBody(this.gameObject);
+            parentScript.ExitCollisionFromChildBody(this.gameObject, this.transform.parent.gameObject);
             
             //if (transform.parent.gameObject.name == "BodyPlant_0")
             //    parentScript.ExitCollisionFromChildBody(this.gameObject);

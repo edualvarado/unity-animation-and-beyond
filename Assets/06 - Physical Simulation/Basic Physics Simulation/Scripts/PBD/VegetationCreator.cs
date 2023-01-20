@@ -20,6 +20,10 @@ namespace PositionBasedDynamics
     {
         #region Instance Fields
 
+        [Header("Randomizer")]
+        public bool activateRandomization;
+        public Vector2 limitsTerrain;
+        
         // Debug
         [Header("Debug")]
         public bool printInformation;
@@ -56,9 +60,11 @@ namespace PositionBasedDynamics
         public bool drawLines = true;
         public bool drawMesh = true;
         public bool drawSpheres = true;
+        public bool makeSpheresVisible = false;
 
         [Header("Mesh - Properties")]
-        public Mesh mesh;
+        public Mesh[] mesh;
+        public Material grass;
         public Material sphereMaterial;
         public Material sphereMaterialNoContact;
         public Material sphereMaterialContact;
@@ -72,6 +78,8 @@ namespace PositionBasedDynamics
         #endregion
 
         #region Instance Properties
+
+        private GameObject[,] SpheresPlant { get; set; }
 
         private List<GameObject> Spheres { get; set; }
         private Plant PlantType { get; set; }
@@ -96,19 +104,29 @@ namespace PositionBasedDynamics
         // Start is called before the first frame update
         void Start()
         {
-            // Create Solver
+            // Initialize Solver
             Solver = new Solver3d();
-            
-            // List of plants
+
+            // List of plants for certain type
             for (int i = 0; i < numberOfPlants; i++)
             {
+                Vector3 randomTranslation = new Vector3(Random.Range(-limitsTerrain.x, limitsTerrain.x), 0, Random.Range(-limitsTerrain.y, limitsTerrain.y));
+                float randomRotation = Random.Range(0, 360);
+
                 PlantType = new Plant(plantSize, mass, diameter, spaceBetween, stretchStiffness, bendStiffness);
                 Body = PlantType.CreatePlant(new Vector3(translation.x + i, translation.y, translation.z), new Vector3(rotation.x, rotation.y, rotation.z));
+                //PlantType = new Plant(plantSize, mass, diameter, spaceBetween, stretchStiffness, bendStiffness);
+                //Body = PlantType.CreatePlant(randomTranslation, new Vector3(rotation.x, randomRotation, rotation.z));
+
                 plants.Add(Body);
 
                 // Add particle-based bodies
                 Solver.AddBody(Body);
             }
+
+            // Initialize spheres for each plant of one type
+            SpheresPlant = new GameObject[plants.Count, Body.NumParticles];
+            mesh = new Mesh[numberOfPlants];
 
             // Add external Unity bodies
             ExtRigidBody = obstacle.GetComponent<Rigidbody>();
@@ -127,13 +145,16 @@ namespace PositionBasedDynamics
             // Add collisions with ground
             Collision3d realGround = new PlanarCollision3d(Vector3d.UnitY, terrain.transform.position.y);
             Solver.AddCollision(realGround);
-            
-            // Add collisions with external bodies // TODO for all bodies
-            CollisionExternal3d bodyWithExternal = new BodyCollisionExternal3d(Body, ExtRigidBody);
-            Solver.AddExternalCollision(bodyWithExternal);
 
-            CollisionExternal3d bodyWithExternal2 = new BodyCollisionExternal3d(Body, ExtRigidBody2);
-            Solver.AddExternalCollision(bodyWithExternal2);
+            for (int i = 0; i < numberOfPlants; i++)
+            {
+                // Add collisions with external bodies // TODO for all bodies
+                CollisionExternal3d bodyWithExternal = new BodyCollisionExternal3d(plants[i], ExtRigidBody);
+                Solver.AddExternalCollision(bodyWithExternal);
+
+                CollisionExternal3d bodyWithExternal2 = new BodyCollisionExternal3d(plants[i], ExtRigidBody2);
+                Solver.AddExternalCollision(bodyWithExternal2); 
+            }
 
             // Iterations
             // -------
@@ -186,84 +207,94 @@ namespace PositionBasedDynamics
                 Vector3 min = new Vector3(-GRID_SIZE, 0, -GRID_SIZE);
                 Vector3 max = new Vector3(GRID_SIZE, 0, GRID_SIZE);
                 DrawLines.DrawGrid(camera, Color.white, min, max, 1, transform.localToWorldMatrix);
-                
-                // Vertices
+
+                // Transformation
                 Matrix4x4d m = MathConverter.ToMatrix4x4d(transform.localToWorldMatrix);
-                DrawLines.DrawVertices(LINE_MODE.TRIANGLES, camera, Color.red, Body.Positions, Body.Indices, m);
 
-                // Static Bounds
-                Vector3d sminCloth = new Vector3d(translation.x - (plantSize.x / 2) - (diameter / 2), -(float)spaceBetween, translation.z - (diameter / 2));
-                Vector3d smaxCloth = new Vector3d(translation.x + (plantSize.x / 2) + (diameter / 2), (float)diameter, translation.z + (diameter / 2));
-                StaticBounds = new Box3d(sminCloth, smaxCloth);   
-                DrawLines.DrawBounds(camera, Color.green, StaticBounds, Matrix4x4d.Identity);
+                for (int i = 0; i < numberOfPlants; i++)
+                {
+                    // Vertices
+                    DrawLines.DrawVertices(LINE_MODE.TRIANGLES, camera, Color.red, plants[i].Positions, plants[i].Indices, m);
+
+                    // Static Bounds
+                    Vector3d sminCloth = new Vector3d(translation.x + i - (plantSize.x / 2) - (diameter / 2), -((float)spaceBetween - (float)diameter) - (float)(diameter / 1), translation.z - (diameter / 2));
+                    Vector3d smaxCloth = new Vector3d(translation.x + i + (plantSize.x / 2) + (diameter / 2), (float)diameter, translation.z + (diameter / 2));
+                    StaticBounds = new Box3d(sminCloth, smaxCloth);
+                    DrawLines.DrawBounds(camera, Color.green, StaticBounds, Matrix4x4d.Identity); 
+                }
             }
-
+            
             if (drawMesh)
             {
-                Vector3[] vertices = new Vector3[Body.Positions.Length * 2]; // 24
-                Vector3[] normals = new Vector3[(Body.Indices.Length / 3) * 2]; // 24
-
-                GetComponent<MeshFilter>().mesh = mesh = new Mesh();
-                mesh.name = "TextureMesh";
-
-                for (int i = 0; i < Body.Positions.Length; i++) // From 0 to 12
+                for (int i = 0; i < numberOfPlants; i++)
                 {
-                    vertices[i] = Body.Positions[i].ToVector3();
+                    GameObject parent = GameObject.Find("Parent_" + i.ToString());
+                    mesh[i] = new Mesh();
+                    mesh[i].name = "TextureMesh_" + i.ToString();
+
+                    Vector3[] verticesA = new Vector3[plants[i].Positions.Length]; // Number of particles side A
+                    Vector3[] normalsA = new Vector3[plants[i].Indices.Length / 3]; // Number of indices side A
+                    Vector2[] uvsA = new Vector2[verticesA.Length];
+                    int[] trianglesA = new int[plants[i].Indices.Length];
+
+                    for (int j = 0; j < plants[i].Positions.Length; j++)
+                    {
+                        verticesA[j] = plants[i].Positions[j].ToVector3();
+                    }
+
+                    // TODO
+                    for (int j = 0; j < uvsA.Length; j++)
+                    {
+                        uvsA[j] = new Vector2(verticesA[j].x, verticesA[j].y);
+                    }
+
+                    for (int j = 0; j < plants[i].Indices.Length; j++)
+                    {
+                        trianglesA[j] = plants[i].Indices[j];
+                    }
+
+                    mesh[i].vertices = verticesA;
+                    mesh[i].uv = uvsA;
+                    mesh[i].triangles = trianglesA;
+
+                    parent.GetComponent<MeshFilter>().mesh = mesh[i]; 
                 }
-
-                for (int i = Body.Positions.Length; i < Body.Positions.Length * 2; i++) // From 12 to 24 // TEST
-                {
-                    vertices[i] = Body.Positions[i - Body.Positions.Length].ToVector3();
-                }
-
-                mesh.vertices = vertices;
-
-                int[] triangles = new int[Body.Indices.Length * 2]; // 72
-
-                for (int i = 0; i < Body.Indices.Length; i++) // From 0 to 36
-                {
-                    triangles[i] = Body.Indices[i];
-                }
-
-                for (int i = Body.Indices.Length; i < Body.Indices.Length * 2; i++) // From 36 to 72 // ERROR - FLIP NORMAL
-                {
-                    triangles[i] = Body.Indices[i - Body.Indices.Length];
-                }
-
-                mesh.triangles = triangles;
-
-                //Debug.Log("Normals: " + normals.Length);
-
-                //for (var n = 12; n < normals.Length; n++)
-                //{
-                //    normals[n] = -normals[n];
-                //}
-
-                //mesh.normals = normals;
-
-                mesh.RecalculateNormals();
             }
         }
 
-        private void CreateSpheres()
+        private void CreateSpheres() // TODO Spheres list should be one per plant
         {
             if (sphereMaterial == null) return;
 
             Spheres = new List<GameObject>();
+            GameObject[] bodyPlantParent = new GameObject[numberOfPlants];
 
-            for (int j = 0; j < numberOfPlants; j++)
+            for (int i = 0; i < numberOfPlants; i++)
             {
-                int numParticles = Body.NumParticles;
-                float diam = (float)Body.ParticleRadius * 2.0f;
-                GameObject bodyPlant = new GameObject("BodyPlant_" + j);
+                // Define spheres for each particle
+                int numParticles = plants[i].NumParticles;
+                float diam = (float)plants[i].ParticleRadius * 2.0f;
 
-                for (int i = 0; i < numParticles; i++)
+                // Create parent with mesh Filter + Mesh Renderer for each 
+                //GameObject bodyPlant = new GameObject(i.ToString());
+                bodyPlantParent[i] = new GameObject("Parent_" + i.ToString());
+                bodyPlantParent[i].AddComponent<MeshFilter>();
+                bodyPlantParent[i].AddComponent<MeshRenderer>();
+                bodyPlantParent[i].GetComponent<MeshRenderer>().material = grass;
+
+                for (int j = 0; j < numParticles; j++)
                 {
-                    Vector3 pos = MathConverter.ToVector3(Body.Positions[i]);
+                    Vector3 pos = MathConverter.ToVector3(plants[i].Positions[j]);
 
                     GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                    sphere.name = i.ToString();
-                    sphere.transform.parent = bodyPlant.transform;
+
+                    if (makeSpheresVisible)
+                        sphere.GetComponent<MeshRenderer>().enabled = true;
+                    else
+                        sphere.GetComponent<MeshRenderer>().enabled = false;
+
+                    sphere.name = j.ToString();
+                    sphere.transform.parent = bodyPlantParent[i].transform;
                     sphere.transform.position = pos;
                     sphere.transform.localScale = new Vector3(diam, diam, diam);
                     sphere.GetComponent<Collider>().enabled = true;
@@ -273,6 +304,7 @@ namespace PositionBasedDynamics
                     sphere.GetComponent<MeshRenderer>().material = sphereMaterialNoContact;
 
                     Spheres.Add(sphere);
+                    SpheresPlant[i,j] = sphere;
                 } 
             }
         }
@@ -281,25 +313,35 @@ namespace PositionBasedDynamics
         {
             if (Spheres != null)
             {
-                for (int j = 0; j < numberOfPlants; j++)
+                for (int i = 0; i < numberOfPlants; i++)
                 {
-                    for (int i = 0; i < Spheres.Count; i++)
+                    for (int j = 0; j < SpheresPlant.GetLength(1); j++)
                     {
-                        Vector3d pos = Body.Positions[i];
-                        Spheres[i].transform.position = new Vector3((float)pos.x, (float)pos.y, (float)pos.z);
+                        Vector3d pos = plants[i].Positions[j];
+                        //Spheres[j].transform.position = new Vector3((float)pos.x, (float)pos.y, (float)pos.z);
+                        SpheresPlant[i,j].transform.position = new Vector3((float)pos.x, (float)pos.y, (float)pos.z);
 
-                        if (Body.IsContact[i] && !Body.IsBroken[i])
-                            Spheres[i].GetComponent<MeshRenderer>().material = sphereMaterialContact;
-                        else if (!Body.IsContact[i] && !Body.IsBroken[i])
-                            Spheres[i].GetComponent<MeshRenderer>().material = sphereMaterialNoContact;
-                        else if (Body.IsBroken[i])
-                            Spheres[i].GetComponent<MeshRenderer>().material = sphereMaterialBroken;
+                        if (plants[i].IsContact[j] && !plants[i].IsBroken[j])
+                        {
+                            //Spheres[j].GetComponent<MeshRenderer>().material = sphereMaterialContact;
+                            SpheresPlant[i,j].GetComponent<MeshRenderer>().material = sphereMaterialContact;
+                        }
+                        else if (!plants[i].IsContact[j] && !plants[i].IsBroken[j])
+                        {
+                            //Spheres[j].GetComponent<MeshRenderer>().material = sphereMaterialNoContact;
+                            SpheresPlant[i, j].GetComponent<MeshRenderer>().material = sphereMaterialNoContact;
+                        }
+                        else if (plants[i].IsBroken[j])
+                        {
+                            //Spheres[j].GetComponent<MeshRenderer>().material = sphereMaterialBroken;
+                            SpheresPlant[i, j].GetComponent<MeshRenderer>().material = sphereMaterialBroken;
+                        }
                     } 
                 }
             }
         }
 
-        public void CollisionFromChildBody(Collision hit, float penetrationDistance, GameObject children)
+        public void CollisionFromChildBody(Collision hit, float penetrationDistance, GameObject children, GameObject parent)
         {
             if (printInformation)
             {
@@ -307,9 +349,10 @@ namespace PositionBasedDynamics
                 Debug.Log("CHANGING SPHERE: " + int.Parse(children.name) + " with the value " + Spheres[int.Parse(children.name)].GetComponent<DetectCollision>().Hit.GetContact(0).point);
             }
 
-            Body.ExternalHit[int.Parse(children.name)] = hit.GetContact(0);
-            Body.PenetrationDistance[int.Parse(children.name)] = penetrationDistance;
-            Body.IsContact[int.Parse(children.name)] = true;
+            // Instead of just parent.name being the number               
+            plants[int.Parse(parent.name.Substring(parent.name.Length - 1))].ExternalHit[int.Parse(children.name)] = hit.GetContact(0);
+            plants[int.Parse(parent.name.Substring(parent.name.Length - 1))].PenetrationDistance[int.Parse(children.name)] = penetrationDistance;
+            plants[int.Parse(parent.name.Substring(parent.name.Length - 1))].IsContact[int.Parse(children.name)] = true;
 
             if (printInformation)
             {
@@ -328,11 +371,13 @@ namespace PositionBasedDynamics
             }
         }
 
-        public void ExitCollisionFromChildBody(GameObject children)
+        public void ExitCollisionFromChildBody(GameObject children, GameObject parent)
         {
-            Body.ExternalHit[int.Parse(children.name)] = new ContactPoint();
-            Body.PenetrationDistance[int.Parse(children.name)] = 0f;
-            Body.IsContact[int.Parse(children.name)] = false;
+
+            // Instead of just parent.name being the number               
+            plants[int.Parse(parent.name.Substring(parent.name.Length - 1))].ExternalHit[int.Parse(children.name)] = new ContactPoint();
+            plants[int.Parse(parent.name.Substring(parent.name.Length - 1))].PenetrationDistance[int.Parse(children.name)] = 0f;
+            plants[int.Parse(parent.name.Substring(parent.name.Length - 1))].IsContact[int.Parse(children.name)] = false;
 
             if (printInformation)
             {

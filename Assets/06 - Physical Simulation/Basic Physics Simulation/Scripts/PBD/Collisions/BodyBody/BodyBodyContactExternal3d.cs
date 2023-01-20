@@ -60,7 +60,7 @@ namespace PositionBasedDynamics.Collisions
                 //Vector3d delta = di * (Body1.PenetrationDistance[i1]) * normal;
                 //Debug.Log("Penetration: " + Body1.PenetrationDistance[i1]);
                 
-                Vector3d delta = di * (0.0025f) * normal; // Using step size as penetration distance
+                Vector3d delta = di * (0.001f) * normal; // Using step size as penetration distance
 
                 Body1.Predicted[i1] += delta * 1.0f; // mass1
                 Body1.Positions[i1] += delta * 1.0f; // mass1

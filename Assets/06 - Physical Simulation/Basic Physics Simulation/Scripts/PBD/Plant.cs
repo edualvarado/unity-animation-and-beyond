@@ -63,7 +63,8 @@ namespace PositionBasedDynamics
         {
             // Always translate upwards s.t. we leave a virtual row underground
             //double height = (plantSize.y / 2) - diameter / 2; 
-            double height = (plantSize.y / 2) - spaceBetween + diameter / 2;
+            //double height = (plantSize.y / 2) - spaceBetween + diameter / 2;
+            double height = (plantSize.y / 2) - ((diameter/2) + (spaceBetween - diameter));
 
             // Global pos and rotation of mesh
             Matrix4x4d TCloth = Matrix4x4d.Translate(new Vector3d(translation.x, height, translation.z)); // should be height
@@ -84,7 +85,7 @@ namespace PositionBasedDynamics
             Body.Dampning = 1.0;
 
             // Volume fixed
-            Vector3d sminCloth = new Vector3d(translation.x - (plantSize.x / 2) - (diameter / 2), -(float)spaceBetween, translation.z - (diameter / 2));
+            Vector3d sminCloth = new Vector3d(translation.x - (plantSize.x / 2) - (diameter / 2), -((float)spaceBetween - (float)diameter) - (float)(diameter / 1), translation.z - (diameter / 2));
             Vector3d smaxCloth = new Vector3d(translation.x + (plantSize.x / 2) + (diameter / 2), (float)diameter, translation.z + (diameter / 2));
             StaticBounds = new Box3d(sminCloth, smaxCloth);
             Body.MarkAsStatic(StaticBounds);
