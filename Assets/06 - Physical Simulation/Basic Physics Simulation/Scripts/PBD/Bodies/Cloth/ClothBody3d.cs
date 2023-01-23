@@ -34,7 +34,6 @@ namespace PositionBasedDynamics.Bodies.Cloth
 
         private void CreateParticles(TrianglesFromGrid source, Matrix4x4d RTS)
         {
-
             for (int i = 0; i < NumParticles; i++)
             {
                 Vector4d pos = RTS * source.Positions[i].xyz1;

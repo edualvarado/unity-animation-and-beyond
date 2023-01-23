@@ -583,7 +583,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1254025400}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.987, y: 0.76, z: -3.31}
+  m_LocalPosition: {x: 2.9, y: 0.76, z: -3.31}
   m_LocalScale: {x: 1.15352, y: 1.15352, z: 1.15352}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -873,7 +873,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1546129172}
   m_LocalRotation: {x: 0.17742766, y: -0.6844848, z: -0.17742766, w: 0.6844848}
-  m_LocalPosition: {x: 2.9869998, y: -0.25, z: -3.5}
+  m_LocalPosition: {x: 0, y: -0.25, z: -3.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1372,12 +1372,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   activateRandomization: 0
   limitsTerrain: {x: 5, y: 5}
+  testTranslation: {x: 0, y: 0, z: 0}
+  testRotation: {x: 0, y: 0, z: 0}
   printInformation: 0
-  applyGravity: 1
+  applyGravity: 0
   obstacle: {fileID: 1254025400}
   obstacle2: {fileID: 547871029}
   terrain: {fileID: 1552536866}
-  translation: {x: 3, y: 0, z: 0}
+  translation: {x: 0, y: 0, z: 0}
   rotation: {x: 90, y: 0, z: 0}
   numberOfPlants: 1
   plantSize: {x: 0.2, y: 0.3}
@@ -1390,7 +1392,6 @@ MonoBehaviour:
   drawMesh: 1
   drawSpheres: 1
   makeSpheresVisible: 1
-  mesh: []
   grass: {fileID: 2100000, guid: 9a532d18907c1b749b9f6525bc683c73, type: 2}
   sphereMaterial: {fileID: 2100000, guid: 61e3b86ec85bd0140bf4f842f5d75aef, type: 2}
   sphereMaterialNoContact: {fileID: 2100000, guid: 2018d320d3499f945a7110a2f4b50da5, type: 2}
@@ -1399,3 +1400,11 @@ MonoBehaviour:
   iterations: 2
   solverIterations: 2
   collisionIterations: 2
+  deformingMesh: []
+  originalVertices: []
+  displacedVertices: []
+  originalVerticesLocal: []
+  displacedVerticesLocal: []
+  originalUV: []
+  displacedUV: []
+  triangles: 

@@ -23,6 +23,8 @@ namespace PositionBasedDynamics
         [Header("Randomizer")]
         public bool activateRandomization;
         public Vector2 limitsTerrain;
+        public Vector3 testTranslation;
+        public Vector3 testRotation;
         
         // Debug
         [Header("Debug")]
@@ -63,7 +65,6 @@ namespace PositionBasedDynamics
         public bool makeSpheresVisible = false;
 
         [Header("Mesh - Properties")]
-        public Mesh[] mesh;
         public Material grass;
         public Material sphereMaterial;
         public Material sphereMaterialNoContact;
@@ -74,6 +75,13 @@ namespace PositionBasedDynamics
         public int iterations = 2; // 4 before
         public int solverIterations = 1; // 2 before
         public int collisionIterations = 1; // 2 before
+
+        [Header("Mesh Deformation")]
+        public Mesh[] deformingMesh;
+        public Vector3[] originalVertices, displacedVertices;
+        public Vector3[] originalVerticesLocal, displacedVerticesLocal;
+        public Vector2[] originalUV, displacedUV;
+        public int[] triangles; 
 
         #endregion
 
@@ -126,7 +134,7 @@ namespace PositionBasedDynamics
 
             // Initialize spheres for each plant of one type
             SpheresPlant = new GameObject[plants.Count, Body.NumParticles];
-            mesh = new Mesh[numberOfPlants];
+            deformingMesh = new Mesh[numberOfPlants];
 
             // Add external Unity bodies
             ExtRigidBody = obstacle.GetComponent<Rigidbody>();
@@ -143,7 +151,7 @@ namespace PositionBasedDynamics
             // -------
 
             // Add collisions with ground
-            Collision3d realGround = new PlanarCollision3d(Vector3d.UnitY, terrain.transform.position.y);
+            Collision3d realGround = new PlanarCollision3d(Vector3d.UnitY, terrain.transform.position.y - (float)diameter / 2); 
             Solver.AddCollision(realGround);
 
             for (int i = 0; i < numberOfPlants; i++)
@@ -168,6 +176,11 @@ namespace PositionBasedDynamics
             {
                 CreateSpheres();
             }
+
+            if(drawMesh)
+            {
+                CreateMesh();
+            }
         }
 
         private void FixedUpdate()
@@ -185,6 +198,96 @@ namespace PositionBasedDynamics
             if (drawSpheres)
             {
                 UpdateSpheres();
+            }
+
+            if (drawMesh)
+            {
+                UpdateMesh();
+            }
+        }
+
+        private void CreateMesh()
+        {
+            for (int i = 0; i < numberOfPlants; i++)
+            {
+                // Get mesh
+                GameObject parent = GameObject.Find("Parent_" + i.ToString());
+                GameObject type = GameObject.Find("Type_" + i.ToString());
+
+                deformingMesh[i] = new Mesh();
+                deformingMesh[i].name = "TextureMesh_" + i.ToString();
+
+                // Assign to parent
+                parent.GetComponent<MeshFilter>().mesh = deformingMesh[i];
+                
+                // Initialize vertices
+                originalVertices = new Vector3[plants[i].Positions.Length];
+                originalVerticesLocal = new Vector3[plants[i].Positions.Length];
+
+                for (int j = 0; j < plants[i].Positions.Length; j++)
+                {
+                    originalVertices[j] = plants[i].Positions[j].ToVector3();
+                    originalVerticesLocal[j] = type.transform.InverseTransformPoint(plants[i].Positions[j].ToVector3());
+
+                    Debug.Log("Positions: " + j + " is " + originalVertices[j]);
+                    Debug.Log("Local Positions: " + j + " is " + originalVerticesLocal[j]);
+                }
+
+                displacedVertices = new Vector3[plants[i].Positions.Length];
+                displacedVerticesLocal = new Vector3[plants[i].Positions.Length];
+
+                // Initialize UV
+                originalUV = new Vector2[originalVertices.Length];
+                for (int j = 0; j < plants[i].Positions.Length; j++)
+                {
+                    originalUV[j] = new Vector2(originalVertices[j].x, originalVertices[j].y); // ERROR
+                }
+
+                displacedUV = new Vector2[displacedVertices.Length];
+
+                // Initialize Triangles
+                triangles = new int[plants[i].Indices.Length];
+                for (int j = 0; j < plants[i].Indices.Length; j++)
+                {
+                    triangles[j] = plants[i].Indices[j];
+                }
+
+                // Set to mesh
+                deformingMesh[i].vertices = originalVertices;
+                deformingMesh[i].uv = originalUV;
+                deformingMesh[i].triangles = triangles;
+            }
+        }
+
+        private void UpdateMesh()
+        {
+            for (int i = 0; i < numberOfPlants; i++)
+            {
+                //Vector3[] normals = new Vector3[plants[i].Indices.Length / 3]; // Number of indices side
+
+                for (int j = 0; j < plants[i].Positions.Length; j++)
+                {
+                    displacedVertices[j] = plants[i].Positions[j].ToVector3();
+                    displacedUV[j] = new Vector2(displacedVertices[j].x, displacedVertices[j].y);
+                }
+
+                for (var j = 0; j < displacedUV.Length; j++)
+                {
+                    var rot = Quaternion.Euler(testRotation);
+                    displacedUV[j] = rot * displacedUV[j];
+                }
+
+                // Define triangles
+                triangles = new int[plants[i].Indices.Length];
+                for (int j = 0; j < plants[i].Indices.Length; j++)
+                {
+                    triangles[j] = plants[i].Indices[j];
+                }
+
+                // Set to mesh
+                deformingMesh[i].vertices = displacedVertices;
+                deformingMesh[i].uv = displacedUV;
+                deformingMesh[i].triangles = triangles;
             }
         }
 
@@ -217,49 +320,14 @@ namespace PositionBasedDynamics
                     DrawLines.DrawVertices(LINE_MODE.TRIANGLES, camera, Color.red, plants[i].Positions, plants[i].Indices, m);
 
                     // Static Bounds
-                    Vector3d sminCloth = new Vector3d(translation.x + i - (plantSize.x / 2) - (diameter / 2), -((float)spaceBetween - (float)diameter) - (float)(diameter / 1), translation.z - (diameter / 2));
-                    Vector3d smaxCloth = new Vector3d(translation.x + i + (plantSize.x / 2) + (diameter / 2), (float)diameter, translation.z + (diameter / 2));
+                    //Vector3d sminCloth = new Vector3d(translation.x + i - (plantSize.x / 2) - (diameter / 2), -((float)spaceBetween - (float)diameter) - (float)(diameter / 1), translation.z - (diameter / 2));
+                    //Vector3d smaxCloth = new Vector3d(translation.x + i + (plantSize.x / 2) + (diameter / 2), (float)diameter, translation.z + (diameter / 2));
+                    Vector3d sminCloth = new Vector3d(translation.x - 10, -((float)spaceBetween - (float)diameter) - (float)(diameter / 1), translation.z - 10); // For testing only
+                    Vector3d smaxCloth = new Vector3d(translation.x + 10, (float)diameter, translation.z + 10); // For testing only
                     StaticBounds = new Box3d(sminCloth, smaxCloth);
                     DrawLines.DrawBounds(camera, Color.green, StaticBounds, Matrix4x4d.Identity); 
                 }
-            }
-            
-            if (drawMesh)
-            {
-                for (int i = 0; i < numberOfPlants; i++)
-                {
-                    GameObject parent = GameObject.Find("Parent_" + i.ToString());
-                    mesh[i] = new Mesh();
-                    mesh[i].name = "TextureMesh_" + i.ToString();
-
-                    Vector3[] verticesA = new Vector3[plants[i].Positions.Length]; // Number of particles side A
-                    Vector3[] normalsA = new Vector3[plants[i].Indices.Length / 3]; // Number of indices side A
-                    Vector2[] uvsA = new Vector2[verticesA.Length];
-                    int[] trianglesA = new int[plants[i].Indices.Length];
-
-                    for (int j = 0; j < plants[i].Positions.Length; j++)
-                    {
-                        verticesA[j] = plants[i].Positions[j].ToVector3();
-                    }
-
-                    // TODO
-                    for (int j = 0; j < uvsA.Length; j++)
-                    {
-                        uvsA[j] = new Vector2(verticesA[j].x, verticesA[j].y);
-                    }
-
-                    for (int j = 0; j < plants[i].Indices.Length; j++)
-                    {
-                        trianglesA[j] = plants[i].Indices[j];
-                    }
-
-                    mesh[i].vertices = verticesA;
-                    mesh[i].uv = uvsA;
-                    mesh[i].triangles = trianglesA;
-
-                    parent.GetComponent<MeshFilter>().mesh = mesh[i]; 
-                }
-            }
+            }  
         }
 
         private void CreateSpheres() // TODO Spheres list should be one per plant
@@ -268,6 +336,7 @@ namespace PositionBasedDynamics
 
             Spheres = new List<GameObject>();
             GameObject[] bodyPlantParent = new GameObject[numberOfPlants];
+            GameObject[] bodyPlantMaster = new GameObject[numberOfPlants];
 
             for (int i = 0; i < numberOfPlants; i++)
             {
@@ -278,6 +347,12 @@ namespace PositionBasedDynamics
                 // Create parent with mesh Filter + Mesh Renderer for each 
                 //GameObject bodyPlant = new GameObject(i.ToString());
                 bodyPlantParent[i] = new GameObject("Parent_" + i.ToString());
+                bodyPlantMaster[i] = new GameObject("Type_" + i.ToString());
+
+                bodyPlantMaster[i].transform.position = Vector3.zero + translation; // Correct
+                //bodyPlantMaster[i].transform.rotation = Quaternion.LookRotation(bodyPlantMaster[i].transform.forward); // Not correct
+
+                bodyPlantParent[i].transform.parent = bodyPlantMaster[i].transform;
                 bodyPlantParent[i].AddComponent<MeshFilter>();
                 bodyPlantParent[i].AddComponent<MeshRenderer>();
                 bodyPlantParent[i].GetComponent<MeshRenderer>().material = grass;

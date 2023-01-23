@@ -40,6 +40,7 @@ namespace PositionBasedDynamics
 
         private ClothBody3d Body { get; set; }
         private Box3d StaticBounds { get; set; }
+        private TrianglesFromGrid sourceMesh { get; set; }
 
         #endregion
 
@@ -76,7 +77,7 @@ namespace PositionBasedDynamics
             double depth = plantSize.y;
 
             // Create mesh given space in between and size
-            TrianglesFromGrid sourceMesh = new TrianglesFromGrid(spaceBetween / 2, width, depth);
+            sourceMesh = new TrianglesFromGrid(spaceBetween / 2, width, depth);
 
             // Build plant body given the specs
             Body = new ClothBody3d(sourceMesh, diameter / 2, mass, stretchStiffness, bendStiffness, TRCloth);
@@ -85,8 +86,10 @@ namespace PositionBasedDynamics
             Body.Dampning = 1.0;
 
             // Volume fixed
-            Vector3d sminCloth = new Vector3d(translation.x - (plantSize.x / 2) - (diameter / 2), -((float)spaceBetween - (float)diameter) - (float)(diameter / 1), translation.z - (diameter / 2));
-            Vector3d smaxCloth = new Vector3d(translation.x + (plantSize.x / 2) + (diameter / 2), (float)diameter, translation.z + (diameter / 2));
+            //Vector3d sminCloth = new Vector3d(translation.x - (plantSize.x / 2) - (diameter / 2), -((float)spaceBetween - (float)diameter) - (float)(diameter / 1), translation.z - (diameter / 2));
+            //Vector3d smaxCloth = new Vector3d(translation.x + (plantSize.x / 2) + (diameter / 2), (float)diameter, translation.z + (diameter / 2));
+            Vector3d sminCloth = new Vector3d(translation.x - 10, -((float)spaceBetween - (float)diameter) - (float)(diameter / 1), translation.z - 10); // For testing only
+            Vector3d smaxCloth = new Vector3d(translation.x + 10, (float)diameter, translation.z + 10); // For testing only
             StaticBounds = new Box3d(sminCloth, smaxCloth);
             Body.MarkAsStatic(StaticBounds);
 
