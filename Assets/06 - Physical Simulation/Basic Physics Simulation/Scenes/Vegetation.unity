@@ -1372,8 +1372,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   activateRandomization: 0
   limitsTerrain: {x: 5, y: 5}
-  testTranslation: {x: 0, y: 0, z: 0}
-  testRotation: {x: 0, y: 0, z: 0}
   printInformation: 0
   applyGravity: 0
   obstacle: {fileID: 1254025400}

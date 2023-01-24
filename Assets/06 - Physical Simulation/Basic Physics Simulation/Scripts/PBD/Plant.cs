@@ -60,7 +60,7 @@ namespace PositionBasedDynamics
             this.bendStiffness = bendStiffness;
         }
         
-        public ClothBody3d CreatePlant(Vector3 translation, Vector3 rotation)
+        public ClothBody3d CreatePlant(Vector3 translation, Vector3 rotation, GameObject type)
         {
             // Always translate upwards s.t. we leave a virtual row underground
             //double height = (plantSize.y / 2) - diameter / 2; 
@@ -86,16 +86,27 @@ namespace PositionBasedDynamics
             Body.Dampning = 1.0;
 
             // Volume fixed
-            //Vector3d sminCloth = new Vector3d(translation.x - (plantSize.x / 2) - (diameter / 2), -((float)spaceBetween - (float)diameter) - (float)(diameter / 1), translation.z - (diameter / 2));
-            //Vector3d smaxCloth = new Vector3d(translation.x + (plantSize.x / 2) + (diameter / 2), (float)diameter, translation.z + (diameter / 2));
-            Vector3d sminCloth = new Vector3d(translation.x - 10, -((float)spaceBetween - (float)diameter) - (float)(diameter / 1), translation.z - 10); // For testing only
-            Vector3d smaxCloth = new Vector3d(translation.x + 10, (float)diameter, translation.z + 10); // For testing only
+            Vector3d sminCloth = new Vector3d(translation.x - (plantSize.x / 2) - (diameter / 2), -((float)spaceBetween - (float)diameter) - (float)(diameter / 1), translation.z - (diameter / 2));
+            Vector3d smaxCloth = new Vector3d(translation.x + (plantSize.x / 2) + (diameter / 2), (float)diameter, translation.z + (diameter / 2));
+            //Vector3d sminCloth = new Vector3d(translation.x - 10, -((float)spaceBetween - (float)diameter) - (float)(diameter / 1), translation.z - 10); // For testing only
+            //Vector3d smaxCloth = new Vector3d(translation.x + 10, (float)diameter, translation.z + 10); // For testing only
+
             StaticBounds = new Box3d(sminCloth, smaxCloth);
+            Body.StaticBounds = StaticBounds;
+
+            //Vector3 minRotated = Quaternion.Euler(0, 0, 0) * type.transform.InverseTransformPoint(StaticBounds.Min.ToVector3());
+            //Vector3 maxRotated = Quaternion.Euler(0, 0, 0) * type.transform.InverseTransformPoint(StaticBounds.Max.ToVector3());
+
+            //Vector3 minRotatedGlobal = type.transform.TransformPoint(minRotated);
+            //Vector3 maxRotatedGlobal = type.transform.TransformPoint(maxRotated);
+
+            //StaticBounds = new Box3d(new Vector3d(minRotatedGlobal.x, minRotatedGlobal.y, minRotatedGlobal.z), new Vector3d(maxRotatedGlobal.x, maxRotatedGlobal.y, maxRotatedGlobal.z));
+
             Body.MarkAsStatic(StaticBounds);
 
             return Body;
         }
 
         #endregion
-    } 
+    }
 }

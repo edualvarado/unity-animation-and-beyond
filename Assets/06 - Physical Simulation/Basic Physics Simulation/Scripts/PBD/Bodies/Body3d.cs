@@ -43,6 +43,8 @@ namespace PositionBasedDynamics.Bodies
 
         public Box3d Bounds { get; private set; }
 
+        public Box3d StaticBounds { get; set; }
+
         public List<Constraint3d> Constraints { get; private set; }
 
         private List<StaticConstraint3d> StaticConstraints { get; set; }
