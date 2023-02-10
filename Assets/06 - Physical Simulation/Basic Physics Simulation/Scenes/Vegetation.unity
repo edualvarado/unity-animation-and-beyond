@@ -683,7 +683,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1254025400}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.68, z: -2.78}
+  m_LocalPosition: {x: 0, y: 1.215, z: -2.878}
   m_LocalScale: {x: 1.15352, y: 1.15352, z: 1.15352}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -1618,10 +1618,10 @@ MonoBehaviour:
   spaceBetween: 0.02
   stretchStiffness: 0.1
   bendStiffness: 0.01
-  drawLines: 0
+  drawLines: 1
   drawMesh: 1
   drawSpheres: 1
-  makeSpheresVisible: 0
+  makeSpheresVisible: 1
   grass: {fileID: 2100000, guid: 9a532d18907c1b749b9f6525bc683c73, type: 2}
   sphereMaterial: {fileID: 2100000, guid: 61e3b86ec85bd0140bf4f842f5d75aef, type: 2}
   sphereMaterialNoContact: {fileID: 2100000, guid: 2018d320d3499f945a7110a2f4b50da5, type: 2}

@@ -231,7 +231,7 @@ namespace PositionBasedDynamics
         }
 
         private void FixedUpdate()
-        {
+        {           
             // Update time step
             timeStep = Time.fixedDeltaTime;
 
